@@ -1,5 +1,4 @@
 import itertools
-import argparse
 import screed
 import time
 import os
@@ -8,10 +7,11 @@ from collections import defaultdict, OrderedDict
 from functools import partial
 
 import numpy as np
-
-import tenx_utils
-import np_utils
 from pathos import multiprocessing
+
+from .bam2fasta_args import Bam2FastaArgumentParser
+from . import tenx_utils
+from . import np_utils
 
 DELIMITER = "X"
 LINE_COUNT_PER_BAM_SHARD = 1500
@@ -28,8 +28,8 @@ def iter_split(string, sep=None):
     return (''.join(g) for k, g in groups if k)
 
 
-def calculate_chunksize(length, num_jobs):
-    chunksize, extra = divmod(length, num_jobs)
+def calculate_chunksize(total_jobs_todo, processes):
+    chunksize, extra = divmod(total_jobs_todo, processes)
     if extra:
         chunksize += 1
     return chunksize
@@ -43,7 +43,11 @@ def collect_reduce_temp_fastas(index, umi_filter):
         return unfiltered_umi_to_fasta(index)
 
 
-def unfiltered_umi_to_fasta(index, save_fastas, delimiter, all_fastas_sorted):
+def unfiltered_umi_to_fasta(
+        index,
+        save_fastas,
+        delimiter,
+        all_fastas_sorted):
     """Returns signature records across fasta files for a unique barcode"""
 
     # Getting all fastas for a given barcode
@@ -231,7 +235,7 @@ def bam_to_fasta(
     print("Pooled {} and chunksize {} mapped".format(
         n_jobs, chunksize))
 
-    fastas = list(itertools.chain(*pool.imap(
+    list(itertools.chain(*pool.imap(
         lambda index: collect_reduce_temp_fastas(index),
         range(unique_barcodes),
         chunksize=chunksize)))
@@ -263,9 +267,9 @@ def bam_to_fasta(
             time.time() - startt))
 
 
-def main():
+def bam2fasta(args):
 
-    parser = argparse.ArgumentParser()
+    parser = Bam2FastaArgumentParser()
     parser.add_argument('--filename', help="10x bam file")
 
     parser.add_argument('--count-valid-reads', default=0, type=int,
@@ -294,7 +298,7 @@ def main():
     parser.add_argument('--barcodes-file', type=str,
                         help="Barcodes file if the input is unfiltered 10x bam file", required=False)
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     bam_to_fasta(
         args.filename,
@@ -305,7 +309,3 @@ def main():
         args.delimiter,
         args.write_barcode_meta_csv,
         args.count_valid_reads)
-
-
-if __name__ == '__main__':
-    main()
