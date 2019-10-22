@@ -1,17 +1,20 @@
 language: python
+os: linux
+dist: xenial
+
 python:
   - '2.7'
-  - '3.6'
   - '3.5'
+  - '3.6'
   - '3.7'
 # command to install dependencies
 install:
-  - pip3 install -r requirements.txt
+  - pip install -r requirements.txt
 script:
   # command to lint code
   - flake8 --config .flake8
   # command to run tests
-  - nosetests --with-coverage --cover-erase --cover-package=bam2fasta --cover-html --cover-inclusive
-
-# operating system tested on
-os: linux
+  - python2.7 -m pytest --cov=. --cov-report term-missing
+  - python3.5 -m pytest --cov=. --cov-report term-missing
+  - python3.6 -m pytest --cov=. --cov-report term-missing
+  - python3.7 -m pytest --cov=. --cov-report term-missing
