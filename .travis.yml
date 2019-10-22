@@ -2,6 +2,21 @@ language: python
 os: linux
 dist: xenial
 
+os:
+  - linux
+  - osx
+
+compiler:
+  - gcc
+  - clang
+
+addons:
+  apt:
+    packages:
+      - libbz2-dev
+      - libcurl4-openssl-dev
+      - libssl-dev
+
 python:
   - '2.7'
   - '3.5'
