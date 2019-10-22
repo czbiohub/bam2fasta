@@ -3,7 +3,6 @@
 """
 
 import os
-from .logging import notify
 from collections import defaultdict
 import tempfile
 import time
@@ -123,7 +122,7 @@ def shard_bam_file(bam_file_path, chunked_file_line_count, shards_folder):
     """
     import pysam
 
-    notify("Sharding the bam file")
+    print("Sharding the bam file")
     startt = time.time()
     file_names = []
 
@@ -143,14 +142,14 @@ def shard_bam_file(bam_file_path, chunked_file_line_count, shards_folder):
                 line_count = 0
                 outf.write(alignment)
                 outf.close()
-                notify("===== Sharding bam file ====== {}", file_count,
+                print("===== Sharding bam file ====== {}", file_count,
                        end="\r")
             else:
                 outf.write(alignment)
                 line_count = line_count + 1
         outf.close()
 
-    notify("time taken to shard the bam file into {} shards is {:.5f} seconds",
+    print("time taken to shard the bam file into {} shards is {:.5f} seconds",
            file_count, time.time() - startt)
     return file_names
 
@@ -208,7 +207,7 @@ def bam_to_temp_fasta(barcodes, barcode_renamer, delimiter, bam_file):
         cell_sequences[renamed] += alignment.seq + delimiter
 
     filenames = list(set(write_cell_sequences(cell_sequences, delimiter)))
-    notify("bam_to_fasta conversion completed on {}", bam_file, end='\r', flush=True)
+    print("bam_to_fasta conversion completed on {}", bam_file, end='\r', flush=True)
 
     bam.close()
 
