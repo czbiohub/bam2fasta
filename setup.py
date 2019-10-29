@@ -55,7 +55,7 @@ SETUP_METADATA = \
                              "tqdm==4.36.1"],
         "setup_requires": ["setuptools>=38.6.0"],
         "extras_require": {
-            'test': ['pytest', 'codecov'],
+            'test': ['pytest', 'pytest-cov', 'codecov'],
         },
         "classifiers": CLASSIFIERS
     }
