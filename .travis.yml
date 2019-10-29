@@ -12,7 +12,7 @@ addons:
       - libcurl4-openssl-dev
       - libssl-dev
 
-jobs:
+matrix:
   include:
   - os: linux
     env: PYTHON=2.7
