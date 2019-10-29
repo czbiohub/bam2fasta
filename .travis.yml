@@ -32,5 +32,5 @@ before_install:
 install:
   - python setup.py install # install package + test dependencies
 script: 
-  - pytest # run tests
+  - py.test # run tests
   - codecov # submit coverage
