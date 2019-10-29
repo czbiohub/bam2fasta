@@ -45,7 +45,7 @@ matrix:
 before_install:
   - python --version
 install:
-  - pip install . # install package + test dependencies
+  - pip install . -r requirements.txt # install package + test dependencies
 script: 
   # Coverage doesn't currently work for pathos.multiprocessing module
   # TODO PV Figure out a way to work around it
