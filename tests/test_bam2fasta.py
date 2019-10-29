@@ -13,7 +13,8 @@ def test_iter_split():
     obtained = list(cli.iter_split(input_string, None))
     assert [input_string] == obtained
 
-    input_string = '/path/path2/1.fasta /path/path2/2.fasta /path/path2/3.fasta'
+    input_string = \
+        '/path/path2/1.fasta /path/path2/2.fasta /path/path2/3.fasta'
     obtained = list(cli.iter_split(input_string, None))
     expected = [
         '/path/path2/1.fasta',
@@ -86,4 +87,3 @@ def test_run_bam2fasta_default_args():
         fasta_files = os.listdir(fastas_dir)
         barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
         assert len(barcodes) == 8
-

@@ -37,7 +37,7 @@ with open('README.md', 'r') as readme:
 SETUP_METADATA = \
     {
         "name": "bam2fasta",
-        "description": "tool for converting a bam file to fastas for each barcode",
+        "description": "tool for converting a bam file to fastas",
         "long_description": LONG_DESCRIPTION,
         "long_description_content_type": "text/markdown",
         "url": "https://github.com/pranathivemuri/bam2fasta",
@@ -49,12 +49,14 @@ SETUP_METADATA = \
         "packages": find_packages(exclude=["tests", "benchmarks"]),
         "entry_points": {'console_scripts': [
             'bam2fasta = bam2fasta.__main__:main']},
-        "install_requires": ["screed>=0.9", "pathos==0.2.5", "pysam==0.15.3", "tqdm==4.36.1"],
+        "install_requires": ["screed>=0.9",
+                             "pathos==0.2.5",
+                             "pysam==0.15.3",
+                             "tqdm==4.36.1"],
         "setup_requires": ["setuptools>=38.6.0",
                            'setuptools_scm', 'setuptools_scm_git_archive'],
         "extras_require": {
-            'test': ['pytest', 'pytest-cov', 'numpy', 'matplotlib', 'scipy', 'recommonmark'],
-            'demo': ['jupyter', 'jupyter_client', 'ipython'],
+            'test': ['pytest', 'coverage', 'codecov'],
         },
         "classifiers": CLASSIFIERS
     }

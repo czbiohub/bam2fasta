@@ -1,0 +1,4 @@
+[flake8]
+ignore = N,D,I
+exclude = .git,__pycache__, ./.eggs/, ./.build/
+max-line-length = 80
