@@ -34,7 +34,6 @@ cd ..
 python -m venv testenv1
 python -m venv testenv2
 python -m venv testenv3
-python -m venv testenv4
 
 # First we test the tag
 
@@ -51,7 +50,7 @@ cd ../../testenv2
 deactivate
 source bin/activate
 pip install -U setuptools
-pip install -e git+https://github.com/czbiohub/bam2fasta.git@v${new_version}${rc}#egg=bam2fasta[test]
+pip install -e "git+https://github.com/czbiohub/bam2fasta.git@v${new_version}${rc}#egg=bam2fasta[test]"
 cd src/bam2fasta
 make test
 make dist
@@ -70,7 +69,7 @@ tar xzf bam2fasta-${new_version}${rc}.tar.gz
 cd bam2fasta-${new_version}${rc}
 pip install -r requirements.txt
 make dist
-make test  ## Currently failing, we don't have all the test data...
+make test
 ```
 
 4\. Publish the new release on the testing PyPI server.  You will need
@@ -96,8 +95,7 @@ bam2fasta info  # should print "bam2fasta version ${new_version}${rc}"
 ```
 5\. Do any final testing:
 
-   * check that the binder demo notebook is up to date
-   * check wheels from github releases
+   * check documentation
 
 ## How to make a final release
 
@@ -125,30 +123,23 @@ git push --delete https://github.com/czbiohub/bam2fasta.git v${new_version}${rc}
 4. Add the release on GitHub, using the tag you just pushed.  Name
    it 'version X.Y.Z', and copy and paste in the release notes:
 
-5. Upload wheels from GitHub Releases to PyPI. [`hub`](https://hub.github.com/) makes this easier, but you can also manually download all the files from https://github.com/czbiohub/bam2fasta/releases.
-```
-mkdir -p wheel && cd wheel
-hub release download v${new_version}
-twine upload *.whl
-```
-
 ## Bioconda
 
 The BiocondaBot has an `autobump` feature that should pick up new releases from PyPI, and open a PR in Bioconda. Review any changes
 (especially dependency versions, since these don't get picked up).
 
-This is an example PR (for `2.1.0`): https://github.com/bioconda/bioconda-recipes/pull/17113
+This is an example PR (for `1.0.0`): https://github.com/bioconda/bioconda-recipes/pull/17113
 
 ## Announce it!
 
 If a bioinformatics software is released and no one tweets, is it really released?
 
 Examples:
-2.0.0 https://twitter.com/luizirber/status/1108846466502520832
+1.0.0 https://twitter.com/luizirber/status/1108846466502520832
 
-## To test on a blank Ubuntu system
+## To test on a blank Ubuntu system, may have to sudo
 
 ```
-apt-cache update && apt-get -y install python-dev libfreetype6-dev && \
+apt-cache update && apt-get -y install python-dev libfreetype6-dev && libbz2-dev && libcurl4-openssl-dev && libssl-dev && \
 pip install bam2fasta[test]
 ```
