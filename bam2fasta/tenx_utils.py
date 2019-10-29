@@ -5,11 +5,16 @@
 import os
 from collections import defaultdict
 import tempfile
+import sys
+import logging
 import time
+from tqdm import tqdm
 import numpy as np
 
 CELL_BARCODES = ['CB', 'XC']
 UMIS = ['UB', 'XM']
+
+logger = logging.getLogger(__name__)
 
 
 def pass_alignment_qc(alignment, barcodes):
@@ -35,8 +40,7 @@ def pass_alignment_qc(alignment, barcodes):
     good_molecular_barcode = any([alignment.has_tag(umi) for umi in UMIS])
     not_duplicate = not alignment.is_duplicate
 
-    pass_qc = high_quality_mapping and good_cell_barcode and \
-              good_molecular_barcode and not_duplicate
+    pass_qc = high_quality_mapping and good_cell_barcode and good_molecular_barcode and not_duplicate
     return pass_qc
 
 
@@ -122,7 +126,7 @@ def shard_bam_file(bam_file_path, chunked_file_line_count, shards_folder):
     """
     import pysam
 
-    print("Sharding the bam file")
+    logger.info("Sharding the bam file")
     startt = time.time()
     file_names = []
 
@@ -130,7 +134,7 @@ def shard_bam_file(bam_file_path, chunked_file_line_count, shards_folder):
         line_count = 0
         file_count = 0
         header = bam_file.header
-        for index, alignment in enumerate(bam_file):
+        for alignment in tqdm(bam_file):
             if line_count == 0:
                 file_name = os.path.join(
                     shards_folder,
@@ -142,15 +146,13 @@ def shard_bam_file(bam_file_path, chunked_file_line_count, shards_folder):
                 line_count = 0
                 outf.write(alignment)
                 outf.close()
-                print("===== Sharding bam file ====== {}", file_count,
-                       end="\r")
             else:
                 outf.write(alignment)
                 line_count = line_count + 1
         outf.close()
 
-    print("time taken to shard the bam file into {} shards is {:.5f} seconds",
-           file_count, time.time() - startt)
+    logger.info("time taken to shard the bam file into %d shards is %.5f seconds",
+                file_count, time.time() - startt)
     return file_names
 
 
@@ -207,7 +209,7 @@ def bam_to_temp_fasta(barcodes, barcode_renamer, delimiter, bam_file):
         cell_sequences[renamed] += alignment.seq + delimiter
 
     filenames = list(set(write_cell_sequences(cell_sequences, delimiter)))
-    print("bam_to_fasta conversion completed on {}", bam_file, end='\r', flush=True)
+    logger.info("bam_to_fasta conversion completed on %s", bam_file)
 
     bam.close()
 

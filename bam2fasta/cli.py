@@ -1,20 +1,23 @@
 import itertools
-import screed
 import time
 import os
 import glob
+import logging
 from collections import defaultdict, OrderedDict
 from functools import partial
 
+import screed
 import numpy as np
 from pathos import multiprocessing
 
-from .bam2fasta_args import Bam2FastaArgumentParser
 from . import tenx_utils
+from .bam2fasta_args import create_parser
 from . import np_utils
 
+
+logger = logging.getLogger(__name__)
+
 DELIMITER = "X"
-LINE_COUNT_PER_BAM_SHARD = 1500
 CELL_BARCODE = "CELL_BARCODE"
 UMI_COUNT = "UMI_COUNT"
 READ_COUNT = "READ_COUNT"
@@ -35,41 +38,13 @@ def calculate_chunksize(total_jobs_todo, processes):
     return chunksize
 
 
-def bam2fasta(args):
+def convert(args):
 
-    parser = Bam2FastaArgumentParser()
-    parser.add_argument('--filename', help="10x bam file")
-
-    parser.add_argument('--count-valid-reads', default=0, type=int,
-                        help="For 10x input only (i.e input-is-10x flag is True), "
-                        "A barcode is only considered a valid barcode read "
-                        "and its signature is written if number of umis are greater "
-                        "than count-valid-reads. It is used to weed out cell barcodes "
-                        "with few umis that might have been due to false rna enzyme reactions")
-    parser.add_argument('--write-barcode-meta-csv', type=str,
-                        help="For 10x input only (i.e input-is-10x flag is True), for each of the unique barcodes, "
-                        "Write to a given path, number of reads and number of umis per barcode.")
-    parser.add_argument('-p', '--processes', default=2, type=int,
-                        help='For 10x input only (i.e input-is-10x flag is True, '
-                        'Number of processes to use for reading 10x bam file')
-    parser.add_argument('--delimiter', default="X", type=str,
-                        help='delimiter between sequences')
-    parser.add_argument('--save-fastas', default="", type=str,
-                        help='For 10x input only (i.e input-is-10x flag is True), '
-                        'save merged fastas for all the unique barcodes to {CELL_BARCODE}.fasta '
-                        'in the absolute path given by this flag, By default, fastas are not saved')
-    parser.add_argument('--line-count', type=int,
-                        help='For 10x input only (i.e input-is-10x flag is True), line count for each bam shard',
-                        default=LINE_COUNT_PER_BAM_SHARD)
-    parser.add_argument('--rename-10x-barcodes', type=str,
-                        help="Tab-separated file mapping 10x barcode name "
-                        "to new name, e.g. with channel or cell "
-                        "annotation label", required=False)
-    parser.add_argument('--barcodes-file', type=str,
-                        help="Barcodes file if the input is unfiltered 10x bam file", required=False)
-
+    parser = create_parser()
     args = parser.parse_args(args)
-    args = vars(args)
+
+    logger.info(args)
+
     umi_filter = True if args.count_valid_reads != 0 else False
     all_fastas_sorted = []
     all_fastas = ""
@@ -81,7 +56,7 @@ def bam2fasta(args):
         else:
             return unfiltered_umi_to_fasta(index)
 
-    def unfiltered_umi_to_fasta(args, index):
+    def unfiltered_umi_to_fasta(index):
         """Returns signature records across fasta files for a unique barcode"""
 
         # Getting all fastas for a given barcode
@@ -129,7 +104,7 @@ def bam2fasta(args):
         # from different shards
         single_barcode_fastas = all_fastas_sorted[index]
 
-        print("calculating umi counts")
+        logger.debug("calculating umi counts")
         # Tracking UMI Counts
         umis = defaultdict(int)
         # Iterating through fasta files for single barcode from different
@@ -139,14 +114,14 @@ def bam2fasta(args):
             for record in screed.open(fasta):
                 umis[record.name] += record.sequence.count(args.delimiter)
 
-        if args["write_barcode_meta_csv"]:
+        if args.write_barcode_meta_csv:
             unique_fasta_file = os.path.basename(fasta)
             unique_meta_file = unique_fasta_file.replace(".fasta", "_meta.txt")
             with open(unique_meta_file, "w") as f:
                 f.write("{} {}".format(len(umis), sum(list(umis.values()))))
 
-        print("Completed tracking umi counts")
-        if len(umis) < args["count_valid_reads"]:
+        logger.debug("Completed tracking umi counts")
+        if len(umis) < args.count_valid_reads:
             return []
         count = 0
         for fasta in iter_split(single_barcode_fastas, ","):
@@ -203,27 +178,24 @@ def bam2fasta(args):
             barcode = os.path.basename(fasta).replace(".fasta", "")
             value = fasta_files_dict.get(barcode, "")
             fasta_files_dict[barcode] = value + fasta + ","
-
         # Find unique barcodes
         all_fastas_sorted = list(fasta_files_dict.values())
-        unique_barcodes = len(all_fastas_sorted)
-        print("Found {} unique barcodes", unique_barcodes)
         del fasta_files_dict
-        return unique_barcodes
+        return all_fastas_sorted
 
     # Initializing time
     startt = time.time()
 
     # Setting barcodes file, some 10x files don't have a filtered
     # barcode file
-    if args["barcodes_file"] is not None:
+    if args.barcodes_file is not None:
         barcodes = tenx_utils.read_barcodes_file(args.barcodes_file)
     else:
         barcodes = None
 
     # Shard bam file to smaller bam file
-    print('... reading bam file from {}'.format(args.filename))
-    n_jobs = args["processes"]
+    logger.info('... reading bam file from {}'.format(args.filename))
+    n_jobs = args.processes
     filenames, mmap_file = np_utils.to_memmap(np.array(
         tenx_utils.shard_bam_file(
             args.filename,
@@ -244,7 +216,7 @@ def bam2fasta(args):
     chunksize = calculate_chunksize(length_sharded_bam_files,
                                     n_jobs)
     pool = multiprocessing.Pool(processes=n_jobs)
-    print(
+    logger.info(
         "multiprocessing pool processes {} and chunksize {} calculated".format(
             n_jobs, chunksize))
     # All the fastas are stored in a string instead of a list
@@ -262,28 +234,29 @@ def bam2fasta(args):
     [os.unlink(file) for file in filenames if os.path.exists(file)]
     del filenames
     os.unlink(mmap_file)
-    print("Deleted intermediary bam and memmap files")
+    logger.info("Deleted intermediary bam and memmap files")
 
-    unique_barcodes = get_unique_barcodes(all_fastas)
+    all_fastas_sorted = get_unique_barcodes(all_fastas)
+    unique_barcodes = len(all_fastas_sorted)
+    logger.info("Found %d unique barcodes", unique_barcodes)
     # Cleaning up to retrieve memory from unused large variables
     del all_fastas
 
     pool = multiprocessing.Pool(processes=n_jobs)
     chunksize = calculate_chunksize(unique_barcodes, n_jobs)
-    print("Pooled {} and chunksize {} mapped".format(
+    logger.info("Pooled {} and chunksize {} mapped".format(
         n_jobs, chunksize))
 
-    list(itertools.chain(*pool.imap(
-        lambda index: collect_reduce_temp_fastas(args, index),
+    list(pool.imap(
+        lambda index: collect_reduce_temp_fastas(index),
         range(unique_barcodes),
-        chunksize=chunksize)))
+        chunksize=chunksize))
 
     pool.close()
     pool.join()
 
-    if args["write_barcode_meta_csv"]:
+    if args.write_barcode_meta_csv:
         write_to_barcode_meta_csv()
-    print(
-        "time taken to convert fastas for 10x folder is {:.5f} seconds".format(
-            time.time() - startt))
+    logger.info(
+        "time taken to convert fastas for 10x folder is {:.5f} seconds", time.time() - startt)
 

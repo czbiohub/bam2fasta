@@ -1,6 +1,7 @@
 pathos==0.2.5
 pysam==0.15.3
 screed==1.0
+tqdm==4.36.1
 coverage==4.4.2
 flake8==3.2.1
 nose==1.3.7
