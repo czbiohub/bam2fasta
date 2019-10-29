@@ -45,7 +45,7 @@ def convert(args):
 
     logger.info(args)
 
-    umi_filter = True if args.count_valid_reads != 0 else False
+    umi_filter = True if args.min_umi_per_barcode != 0 else False
     all_fastas_sorted = []
     all_fastas = ""
 
@@ -98,7 +98,7 @@ def convert(args):
 
     def filtered_umi_to_fasta(index):
         """Returns signature records for all the fasta files for a unique
-        barcode, only if it has more than count-valid-reads number of umis."""
+        barcode, only if it has more than mimin_umi_per_barcode-per-barcode number of umis."""
 
         # Getting all fastas for a given barcode
         # from different shards
@@ -121,7 +121,7 @@ def convert(args):
                 f.write("{} {}".format(len(umis), sum(list(umis.values()))))
 
         logger.debug("Completed tracking umi counts")
-        if len(umis) < args.count_valid_reads:
+        if len(umis) < args.min_umi_per_barcode:
             return []
         count = 0
         for fasta in iter_split(single_barcode_fastas, ","):
@@ -132,7 +132,7 @@ def convert(args):
                 barcode_name = unique_fasta_file.replace(".fasta", "")
                 f = open(os.path.join(args.save_fastas, unique_fasta_file), "w")
 
-            # Add sequences of barcodes with more than count-valid-reads umis
+            # Add sequences of barcodes with more than min-umi-per-barcode umis
             for record in screed.open(fasta):
                 sequence = record.sequence
                 umi = record.name

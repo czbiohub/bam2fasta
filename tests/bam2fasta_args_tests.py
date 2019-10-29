@@ -21,7 +21,7 @@ def test_bam2fasta_valid_args():
         parser = bam2fasta_args.create_parser()
         args = [
             '--filename', testdata1,
-            '--count-valid-reads', '10',
+            '--min-umi-per-barcode', '10',
             '--write-barcode-meta-csv', csv_path,
             '--barcodes-file', barcodes_path,
             '--rename-10x-barcodes', renamer_path,
@@ -29,7 +29,7 @@ def test_bam2fasta_valid_args():
         ]
         expected_args_vals = {
             "filename": testdata1,
-            "count_valid_reads": 10,
+            "min_umi_per_barcode": 10,
             "write_barcode_meta_csv": csv_path,
             "barcodes_file": barcodes_path,
             "rename_10x_barcodes": renamer_path,
