@@ -1,12 +1,6 @@
 language: python
 os: linux
 dist: xenial
-
-os:
-  - linux
-  - osx
-
-language: generic
 compiler:
   - gcc
   - clang
@@ -18,19 +12,45 @@ addons:
       - libcurl4-openssl-dev
       - libssl-dev
 
-python:
-  - '2.7'
-  - '3.5'
-  - '3.6.7'
-  - '3.7.1'
+matrix:
+  include:
+  - os: linux
+    env: PYTHON=2.7
+  - os: linux
+    env: PYTHON=3.5
+  - os: linux
+    env: PYTHON=3.6.7
+  - os: linux
+    env: PYTHON=3.7.1
+    # High Sierra (10.13)
+  - os: osx
+    osx_image: xcode9.3
+    env: PYTHON=2.7
+  # Sierra (10.12)
+  - os: osx
+    osx_image: xcode9.2
+    env: PYTHON=2.7
+  # "Generic Python 3.5 on macOS"
+  - os: osx
+    language: shell  # 'language: python' is an error on Travis CI macOS
+    env: PYTHON=3.5
+  - os: osx
+    osx_image: xcode9.4
+    env: PYTHON=3.6.5
+  - os: osx
+    osx_image: xcode10.2
+    env: PYTHON=3.7.3
+
 # command to install dependencies
 before_install:
   - python --version
   - pip install --user -U pip
   - pip install --user -U pytest
   - pip install --user codecov
+  - pip install --user coverage
 install:
   - python setup.py install --user --prefix= # install package + test dependencies
 script: 
-  - py.test # run tests
+  - coverage run --source bam2fasta -m py.test # run tests
+  - coverage report -m # run coverage
   - codecov # submit coverage
