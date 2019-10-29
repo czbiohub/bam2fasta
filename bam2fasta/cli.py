@@ -27,18 +27,19 @@ UMI_COUNT = "UMI_COUNT"
 READ_COUNT = "READ_COUNT"
 
 
-def iter_split(string, sep=' '):
+def iter_split(string, sep=None):
     """
     Return a generator of strings after
     splitting a string by the given separator
 
     sep : str
-        Separator between strings, default one space
+        Separator between strings, default None
     Returns
     -------
     Yields generator of strings after
     splitting a string by the given separator
     """
+    sep = sep or ' '
     groups = itertools.groupby(string, lambda s: s != sep)
     return (''.join(g) for k, g in groups if k)
 

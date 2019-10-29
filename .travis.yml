@@ -53,6 +53,6 @@ script:
   # Coverage doesn't currently work for pathos.multiprocessing module
   # TODO PV Figure out a way to work around it
   - flake8 --config .flake8 # command to lint code
-  - coverage run --source bam2fasta -m py.test # run tests
+  - coverage run --source bam2fasta -m pytest # run tests
   - coverage report -m # run coverage
   - codecov # submit coverage
