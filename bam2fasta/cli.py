@@ -1,3 +1,7 @@
+"""
+Cli tool to convert 10x bam to fastas
+"""
+
 import itertools
 import time
 import os
@@ -23,15 +27,34 @@ UMI_COUNT = "UMI_COUNT"
 READ_COUNT = "READ_COUNT"
 
 
-def iter_split(string, sep=None):
-    """Split a string by the given separator and
-    return the results in a generator"""
-    sep = sep or ' '
+def iter_split(string, sep=' '):
+    """
+    Return a generator of strings after
+    splitting a string by the given separator
+
+    sep : str
+        Separator between strings, default one space
+    Returns
+    -------
+    Yields generator of strings after
+    splitting a string by the given separator
+    """
     groups = itertools.groupby(string, lambda s: s != sep)
     return (''.join(g) for k, g in groups if k)
 
 
 def calculate_chunksize(total_jobs_todo, processes):
+    """
+    Return a generator of strings after
+    splitting a string by the given separator
+
+    sep : str
+        Separator between strings, default one space
+    Returns
+    -------
+    Yields generator of strings after
+    splitting a string by the given separator
+    """
     chunksize, extra = divmod(total_jobs_todo, processes)
     if extra:
         chunksize += 1
@@ -73,7 +96,8 @@ def convert(args):
             if count == 0:
                 unique_fasta_file = os.path.basename(fasta)
                 barcode_name = unique_fasta_file.replace(".fasta", "")
-                f = open(os.path.join(args.save_fastas, unique_fasta_file), "w")
+                f = open(os.path.join(
+                    args.save_fastas, unique_fasta_file), "w")
 
             # Add sequence
             for record in screed.open(fasta):
@@ -85,7 +109,8 @@ def convert(args):
                     if seq == "":
                         continue
                     f.write(">{}\n{}\n".format(
-                        barcode_name + "_" + umi + "_" + '{:03d}'.format(index), seq))
+                        barcode_name + "_" + umi + "_" + '{:03d}'.format(
+                            index), seq))
 
             # Delete fasta file in tmp folder
             if os.path.exists(fasta):
@@ -93,12 +118,12 @@ def convert(args):
 
             count += 1
 
-        # Updating the fasta file with each of the sequences and closing the fasta file
+        # close the fasta file
         f.close()
 
     def filtered_umi_to_fasta(index):
         """Returns signature records for all the fasta files for a unique
-        barcode, only if it has more than mimin_umi_per_barcode-per-barcode number of umis."""
+        barcode, only if it has more than min_umi_per_barcode number of umis"""
 
         # Getting all fastas for a given barcode
         # from different shards
@@ -130,7 +155,8 @@ def convert(args):
             if count == 0:
                 unique_fasta_file = os.path.basename(fasta)
                 barcode_name = unique_fasta_file.replace(".fasta", "")
-                f = open(os.path.join(args.save_fastas, unique_fasta_file), "w")
+                f = open(
+                    os.path.join(args.save_fastas, unique_fasta_file), "w")
 
             # Add sequences of barcodes with more than min-umi-per-barcode umis
             for record in screed.open(fasta):
@@ -143,13 +169,14 @@ def convert(args):
                     if seq == "":
                         continue
                     f.write(">{}\n{}\n".format(
-                        barcode_name + "_" + umi + "_" + '{:03d}'.format(index), seq))
+                        barcode_name + "_" + umi + "_" + '{:03d}'.format(
+                            index), seq))
             # Delete fasta file in tmp folder
             if os.path.exists(fasta):
                 os.unlink(fasta)
             count += 1
 
-        # Update the fasta file with all sequence and close the opened fasta file
+        # close the opened fasta file
         f.close()
 
     def write_to_barcode_meta_csv():
@@ -226,7 +253,8 @@ def convert(args):
     # is saved as a separate element, hence the string
     all_fastas = "," .join(itertools.chain(*(
         pool.imap(
-            lambda x: func(x.encode('utf-8')), filenames, chunksize=chunksize))))
+            lambda x: func(x.encode('utf-8')),
+            filenames, chunksize=chunksize))))
     pool.close()
     pool.join()
 
@@ -258,5 +286,5 @@ def convert(args):
     if args.write_barcode_meta_csv:
         write_to_barcode_meta_csv()
     logger.info(
-        "time taken to convert fastas for 10x folder is {:.5f} seconds", time.time() - startt)
-
+        "time taken to convert fastas for 10x folder is {:.5f} seconds",
+        time.time() - startt)

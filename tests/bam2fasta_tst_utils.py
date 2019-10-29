@@ -58,5 +58,3 @@ def run_shell_cmd(cmd, fail_ok=False, in_directory=None):
         return (proc.returncode, out, err)
     finally:
         os.chdir(cwd)
-
-

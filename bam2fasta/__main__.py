@@ -18,14 +18,14 @@ convert
 
 def main():
     logging.basicConfig(
-        format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+        format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s', # noqa
         datefmt='%Y-%m-%d:%H:%M:%S',
         stream=sys.stdout,
         level=logging.INFO)
 
     commands = {'convert': convert}
     parser = argparse.ArgumentParser(
-        description='work with conversion of 10x .bam file to several .fasta files')
+        description='conversion of 10x .bam file to several .fasta files')
     parser.add_argument('command', nargs='?')
     args = parser.parse_args(sys.argv[1:2])
 
@@ -40,6 +40,7 @@ def main():
 
     cmd = commands.get(args.command)
     cmd(sys.argv[2:])
+
 
 if __name__ == '__main__':
     main()

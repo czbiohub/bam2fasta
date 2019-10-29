@@ -5,7 +5,6 @@
 import os
 from collections import defaultdict
 import tempfile
-import sys
 import logging
 import time
 from tqdm import tqdm
@@ -36,11 +35,14 @@ def pass_alignment_qc(alignment, barcodes):
             [alignment.has_tag(cb) and alignment.get_tag(cb) in barcodes
              for cb in CELL_BARCODES])
     else:
-        good_cell_barcode = any([alignment.has_tag(cb) for cb in CELL_BARCODES])
+        good_cell_barcode = any(
+            [alignment.has_tag(cb) for cb in CELL_BARCODES])
     good_molecular_barcode = any([alignment.has_tag(umi) for umi in UMIS])
     not_duplicate = not alignment.is_duplicate
 
-    pass_qc = high_quality_mapping and good_cell_barcode and good_molecular_barcode and not_duplicate
+    pass_qc = (
+        high_quality_mapping and good_cell_barcode and
+        good_molecular_barcode and not_duplicate)
     return pass_qc
 
 
@@ -151,8 +153,9 @@ def shard_bam_file(bam_file_path, chunked_file_line_count, shards_folder):
                 line_count = line_count + 1
         outf.close()
 
-    logger.info("time taken to shard the bam file into %d shards is %.5f seconds",
-                file_count, time.time() - startt)
+    logger.info(
+        "time taken to shard the bam file into %d shards is %.5f seconds",
+        file_count, time.time() - startt)
     return file_names
 
 
@@ -247,4 +250,3 @@ def write_cell_sequences(cell_sequences, delimiter="X"):
         with open(filename, "a") as f:
             f.write(">{}\n{}\n".format(umi, seq))
         yield filename
-
