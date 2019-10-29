@@ -62,5 +62,5 @@ matrix:
 os: linux
 script: 
   - flake8 --config .flake8
-  - pytest -m --cov=.
+  - pytest --cov=.
   - codecov
