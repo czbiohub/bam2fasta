@@ -1,6 +1,8 @@
 import argparse
 
-LINE_COUNT_PER_BAM_SHARD = 1500
+DEFAULT_LINE_COUNT = 1500
+DEFAULT_DELIMITER = "X"
+DEFAULT_PROCESSES = 2
 
 
 class Bam2FastaArgumentParser(argparse.ArgumentParser):
@@ -31,10 +33,10 @@ def create_parser():
     parser.add_argument('--write-barcode-meta-csv', type=str,
                         help="For 10x input only (i.e input-is-10x flag is True), for each of the unique barcodes, "
                         "Write to a given path, number of reads and number of umis per barcode.")
-    parser.add_argument('-p', '--processes', default=2, type=int,
+    parser.add_argument('-p', '--processes', default=DEFAULT_PROCESSES, type=int,
                         help='For 10x input only (i.e input-is-10x flag is True, '
                         'Number of processes to use for reading 10x bam file')
-    parser.add_argument('--delimiter', default="X", type=str,
+    parser.add_argument('--delimiter', default=DEFAULT_DELIMITER, type=str,
                         help='delimiter between sequences')
     parser.add_argument('--save-fastas', default="", type=str,
                         help='For 10x input only (i.e input-is-10x flag is True), '
@@ -42,7 +44,7 @@ def create_parser():
                         'in the absolute path given by this flag, By default, fastas are not saved')
     parser.add_argument('--line-count', type=int,
                         help='For 10x input only (i.e input-is-10x flag is True), line count for each bam shard',
-                        default=LINE_COUNT_PER_BAM_SHARD)
+                        default=DEFAULT_LINE_COUNT)
     parser.add_argument('--rename-10x-barcodes', type=str,
                         help="Tab-separated file mapping 10x barcode name "
                         "to new name, e.g. with channel or cell "

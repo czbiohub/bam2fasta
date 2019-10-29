@@ -1,6 +1,5 @@
 from . import bam2fasta_tst_utils as utils
 from bam2fasta import cli
-from bam2fasta import bam2fasta_args
 import os
 
 
@@ -32,27 +31,6 @@ def test_calculate_chunksize():
     expected = 11
     obtained = cli.calculate_chunksize(tota_jobs_todo, processes)
     assert expected == obtained
-
-
-def test_bam2fasta_valid_args():
-    with utils.TempDirectory() as location:
-        testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
-        csv_path = os.path.join(location, "all_barcodes_meta.csv")
-        barcodes_path = utils.get_test_data('10x-example/barcodes.tsv')
-        renamer_path = utils.get_test_data('10x-example/barcodes_renamer.tsv')
-        fastas_dir = os.path.join(location, "fastas")
-        if not os.path.exists(fastas_dir):
-            os.makedirs(fastas_dir)
-        parser = bam2fasta_args.create_parser()
-        args = [
-            '--filename', testdata1,
-            '--count-valid-reads', '10',
-            '--write-barcode-meta-csv', csv_path,
-            '--barcodes', barcodes_path,
-            '--rename-10x-barcodes', renamer_path,
-            '--save-fastas', fastas_dir,
-        ]
-        parser.parse_args(args)
 
 
 def test_run_bam2fasta():
