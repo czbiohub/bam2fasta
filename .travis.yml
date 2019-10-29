@@ -16,39 +16,45 @@ jobs:
   include:
   - os: linux
     env: PYTHON=2.7
+    install:
+      - pip install . -r requirements.txt # install package + test dependencies
   - os: linux
     env: PYTHON=3.5
+    install:
+      - pip install . -r requirements.txt # install package + test dependencies
   - os: linux
     env: PYTHON=3.6.7
+    install:
+      - pip install . -r requirements.txt # install package + test dependencies
   - os: linux
     env: PYTHON=3.7.1
-  # High Sierra (10.13)
-  - os: osx
-    osx_image: xcode9.3
-    env: PYTHON=2.7
+    install:
+      - pip install . -r requirements.txt # install package + test dependencies
   # Sierra (10.12)
   - os: osx
     osx_image: xcode9.2
     language: generic
-    env: PYTHON=2.7
+    python=2.7
+    install:
+      - pip install . -r requirements.txt # install package + test dependencies
   # "Generic Python 3.5 on macOS"
   - os: osx
     language: generic  # 'language: python' is an error on Travis CI macOS
-    python =3.5.1
+    python=3.5.1
+    install:
+      - pip install . -r requirements.txt # install package + test dependencies
   - os: osx
     osx_image: xcode9.4
     language: generic
-    env: PYTHON=3.6.5
+    python=3.6.5
+    install:
+      - pip install . -r requirements.txt # install package + test dependencies
   - os: osx
     osx_image: xcode10.2
     language: generic
-    env: PYTHON=3.7.3
-
-# command to install dependencies
-before_install:
-  - python --version
-install:
-  - pip install . -r requirements.txt # install package + test dependencies
+    python=3.7.3
+    install:
+      - pip install . -r requirements.txt # install package + test dependencies
 script: 
   # Coverage doesn't currently work for pathos.multiprocessing module
   # TODO PV Figure out a way to work around it
