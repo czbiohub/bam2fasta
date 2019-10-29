@@ -30,7 +30,7 @@ before_install:
   - pip install --user -U pytest
   - pip install --user codecov
 install:
-  - python setup.py install --user # install package + test dependencies
+  - python setup.py install --user --prefix= # install package + test dependencies
 script: 
   - py.test # run tests
   - codecov # submit coverage
