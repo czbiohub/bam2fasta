@@ -28,7 +28,7 @@ before_install:
   - python --version
   - pip install --user -U pip
   - pip install --user -U pytest
-  - pip install codecov
+  - pip install --user codecov
 install:
   - python setup.py install # install package + test dependencies
 script: 
