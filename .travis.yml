@@ -62,6 +62,5 @@ matrix:
 os: linux
 script: 
   - flake8 --config .flake8
-  - coverage run --source . -m pytest
-  - coverage report -m
+  - pytest -m --cov=.
   - codecov
