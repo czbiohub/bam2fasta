@@ -1,7 +1,7 @@
 import os
 
 from bam2fasta import bam2fasta_args
-from . import bam2fasta_tst_utils as utils
+from tests import bam2fasta_tst_utils as utils
 
 
 def test_bam2fasta_parser():

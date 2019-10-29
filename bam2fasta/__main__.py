@@ -6,7 +6,7 @@ import sys
 import argparse
 import logging
 
-from .cli import convert
+from bam2fasta.cli import convert
 
 usage = '''
 bam2fasta   <command> [<args>]
