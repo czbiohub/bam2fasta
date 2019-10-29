@@ -1,64 +1,67 @@
-language: python
-os: linux
-dist: xenial
-compiler:
-  - gcc
-  - clang
-
-addons:
-  apt:
-    packages:
+--- 
+addons: 
+  apt: 
+    packages: 
       - libbz2-dev
       - libcurl4-openssl-dev
       - libssl-dev
-
-matrix:
-  include:
-  - os: linux
-    env: PYTHON=2.7
-    install:
-      - pip install . -r requirements.txt # install package + test dependencies
-  - os: linux
-    env: PYTHON=3.5
-    install:
-      - pip install . -r requirements.txt # install package + test dependencies
-  - os: linux
-    env: PYTHON=3.6.7
-    install:
-      - pip install . -r requirements.txt # install package + test dependencies
-  - os: linux
-    env: PYTHON=3.7.1
-    install:
-      - pip install . -r requirements.txt # install package + test dependencies
-  # Sierra (10.12)
-  - os: osx
-    osx_image: xcode9.2
-    language: generic
-    python=2.7
-    install:
-      - pip install . -r requirements.txt # install package + test dependencies
-  # "Generic Python 3.5 on macOS"
-  - os: osx
-    language: generic  # 'language: python' is an error on Travis CI macOS
-    python=3.5.1
-    install:
-      - pip install . -r requirements.txt # install package + test dependencies
-  - os: osx
-    osx_image: xcode9.4
-    language: generic
-    python=3.6.5
-    install:
-      - pip install . -r requirements.txt # install package + test dependencies
-  - os: osx
-    osx_image: xcode10.2
-    language: generic
-    python=3.7.3
-    install:
-      - pip install . -r requirements.txt # install package + test dependencies
+compiler: 
+  - gcc
+  - clang
+dist: xenial
+language: python
+matrix: 
+  include: 
+    - 
+      env: PYTHON=2.7
+      install: 
+        - "pip install . -r requirements.txt"
+      os: linux
+    - 
+      env: PYTHON=3.5
+      install: 
+        - "pip install . -r requirements.txt"
+      os: linux
+    - 
+      env: PYTHON=3.6.7
+      install: 
+        - "pip install . -r requirements.txt"
+      os: linux
+    - 
+      env: PYTHON=3.7.1
+      install: 
+        - "pip install . -r requirements.txt"
+      os: linux
+    - 
+      install: 
+        - "pip install . -r requirements.txt"
+      language: generic
+      os: osx
+      osx_image: xcode9.2
+      python: 2.7
+    - 
+      install: 
+        - "pip install . -r requirements.txt"
+      language: generic
+      os: osx
+      python: "3.5.1"
+    - 
+      install: 
+        - "pip install . -r requirements.txt"
+      language: generic
+      os: osx
+      osx_image: xcode9.4
+      python: "3.6.5"
+    - 
+      install: 
+        - "pip install . -r requirements.txt"
+      language: generic
+      os: osx
+      osx_image: xcode10.2
+      python: "3.7.3"
+os: linux
 script: 
-  # Coverage doesn't currently work for pathos.multiprocessing module
-  # TODO PV Figure out a way to work around it
-  - flake8 --config .flake8 # command to lint code
-  - coverage run --source bam2fasta -m pytest # run tests
-  - coverage report -m # run coverage
-  - codecov # submit coverage
+  - "flake8 --config .flake8"
+  - "coverage run --source bam2fasta -m pytest"
+  - "coverage report -m"
+  - codecov
