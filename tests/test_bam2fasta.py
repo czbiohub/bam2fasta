@@ -1,6 +1,7 @@
 from . import bam2fasta_tst_utils as utils
 from bam2fasta import cli
 import os
+import screed
 
 
 def test_iter_split():
@@ -49,6 +50,25 @@ def test_run_bam2fasta():
             ' --barcodes ' + barcodes_path + ' --rename-10x-barcodes ' +
             renamer_path + ' --save-fastas ' + fastas_dir,
             in_directory=location)
+
+        assert status == 0
+        with open(csv_path, 'rb') as f:
+            data = [line.split() for line in f]
+        assert len(data) == 9
+        fasta_files = os.listdir(fastas_dir)
+        barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
+        assert len(barcodes) == 1
+        assert len(fasta_files) == 1
+        assert barcodes[0] == 'lung_epithelial_cell|AAATGCCCAAACTGCT-1'
+        count = 0
+        fasta_file_name = os.path.join(fastas_dir, fasta_files[0])
+        for record in screed.open(fasta_file_name):
+            name = record.name
+            sequence = record.sequence
+            count += 1
+            assert name.startswith('lung_epithelial_cell|AAATGCCCAAACTGCT-1')
+            assert sequence.count(">") == 0
+            assert sequence.count("X") == 0
 
 
 def test_collect_reduce_temp_fastas():
