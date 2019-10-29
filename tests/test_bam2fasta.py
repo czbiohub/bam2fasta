@@ -1,4 +1,4 @@
-from . import bam2fasta_tst_utils as utils
+from tests import bam2fasta_tst_utils as utils
 from bam2fasta import cli
 import os
 import screed

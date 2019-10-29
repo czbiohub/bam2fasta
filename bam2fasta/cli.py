@@ -10,9 +10,9 @@ import screed
 import numpy as np
 from pathos import multiprocessing
 
-from . import tenx_utils
-from .bam2fasta_args import create_parser
-from . import np_utils
+from bam2fasta import tenx_utils
+from bam2fasta.bam2fasta_args import create_parser
+from bam2fasta import np_utils
 
 
 logger = logging.getLogger(__name__)
