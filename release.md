@@ -34,6 +34,7 @@ cd ..
 python -m venv testenv1
 python -m venv testenv2
 python -m venv testenv3
+python -m venv testenv4
 
 # First we test the tag
 
