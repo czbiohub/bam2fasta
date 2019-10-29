@@ -37,12 +37,16 @@ matrix:
       os: osx
       osx_image: xcode9.2
       python: 2.7
+      before_script:
+        - sudo $PIP install -U pip setuptools
       install: 
         - pip install . -r requirements.txt
     - 
       language: generic
       os: osx
       python: 3.5.1
+      before_script:
+        - sudo $PIP install -U pip setuptools
       install: 
         - pip install . -r requirements.txt
     - 
@@ -50,6 +54,8 @@ matrix:
       os: osx
       osx_image: xcode9.4
       python: 3.6.5
+      before_script:
+        - sudo $PIP install -U pip setuptools
       install: 
         - pip install . -r requirements.txt
     - 
@@ -57,6 +63,8 @@ matrix:
       os: osx
       osx_image: xcode10.2
       python: 3.7.3
+      before_script:
+        - sudo $PIP install -U pip setuptools
       install: 
         - pip install . -r requirements.txt
 os: linux
