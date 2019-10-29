@@ -3,8 +3,6 @@ PYTHON ?= python
 all:
 	$(PYTHON) setup.py build_ext -i
 
-.PHONY:
-
 clean:
 	$(PYTHON) setup.py clean --all
 	cd doc && make clean
@@ -23,3 +21,5 @@ coverage: all
 	$(PYTHON) setup.py clean --all
 	$(PYTHON) setup.py build_ext -i
 	$(PYTHON) -m pytest --cov=. --cov-report term-missing
+
+FORCE:
