@@ -34,7 +34,7 @@ def test_calculate_chunksize():
     assert expected == obtained
 
 
-def test_run_bam2fasta():
+def test_run_bam2fasta_supply_all_args():
     with utils.TempDirectory() as location:
         testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
         csv_path = os.path.join(location, "all_barcodes_meta.csv")
@@ -45,10 +45,10 @@ def test_run_bam2fasta():
             os.makedirs(fastas_dir)
 
         status, out, err = utils.run_shell_cmd(
-            'bam2fasta convert --count-valid-reads 10 --filename ' +
+            'bam2fasta convert --min-umi-per-barcode 10 --filename ' +
             testdata1 + ' --write-barcode-meta-csv ' + csv_path +
             ' --barcodes ' + barcodes_path + ' --rename-10x-barcodes ' +
-            renamer_path + ' --save-fastas ' + fastas_dir,
+            renamer_path + ' --save-fastas ' + fastas_dir + " --processes 1",
             in_directory=location)
 
         assert status == 0
@@ -71,49 +71,19 @@ def test_run_bam2fasta():
             assert sequence.count("X") == 0
 
 
-def test_collect_reduce_temp_fastas():
-    tota_jobs_todo = 100
-    processes = 1
-    obtained = cli.calculate_chunksize(tota_jobs_todo, processes)
-    assert tota_jobs_todo == obtained
-    tota_jobs_todo = 51
-    processes = 5
-    expected = 11
-    obtained = cli.calculate_chunksize(tota_jobs_todo, processes)
-    assert expected == obtained
+def test_run_bam2fasta_default_args():
+    with utils.TempDirectory() as location:
+        testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+        fastas_dir = os.path.join(location)
+        if not os.path.exists(fastas_dir):
+            os.makedirs(fastas_dir)
 
+        status, out, err = utils.run_shell_cmd(
+            'bam2fasta convert --filename ' + testdata1,
+            in_directory=location)
 
-def test_unfiltered_umi_to_fasta():
-    tota_jobs_todo = 100
-    processes = 1
-    obtained = cli.calculate_chunksize(tota_jobs_todo, processes)
-    assert tota_jobs_todo == obtained
-    tota_jobs_todo = 51
-    processes = 5
-    expected = 11
-    obtained = cli.calculate_chunksize(tota_jobs_todo, processes)
-    assert expected == obtained
+        assert status == 0
+        fasta_files = os.listdir(fastas_dir)
+        barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
+        assert len(barcodes) == 8
 
-
-def test_filtered_umi_to_fasta():
-    tota_jobs_todo = 100
-    processes = 1
-    obtained = cli.calculate_chunksize(tota_jobs_todo, processes)
-    assert tota_jobs_todo == obtained
-    tota_jobs_todo = 51
-    processes = 5
-    expected = 11
-    obtained = cli.calculate_chunksize(tota_jobs_todo, processes)
-    assert expected == obtained
-
-
-def test_bam_to_fasta():
-    tota_jobs_todo = 100
-    processes = 1
-    obtained = cli.calculate_chunksize(tota_jobs_todo, processes)
-    assert tota_jobs_todo == obtained
-    tota_jobs_todo = 51
-    processes = 5
-    expected = 11
-    obtained = cli.calculate_chunksize(tota_jobs_todo, processes)
-    assert expected == obtained
