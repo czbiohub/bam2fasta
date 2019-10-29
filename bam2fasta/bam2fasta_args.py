@@ -19,6 +19,7 @@ class Bam2FastaArgumentParser(argparse.ArgumentParser):
 
 
 def create_parser():
+    """Returns after adding all arguments to Bam2FastaArgumentParser."""
     parser = Bam2FastaArgumentParser()
     parser.add_argument('--filename', type=str, help="10x bam file")
 
