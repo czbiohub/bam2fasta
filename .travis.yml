@@ -35,7 +35,6 @@ matrix:
     - 
       language: generic
       os: osx
-      osx_image: xcode9.2
       python: 2.7
       before_install:
         - sudo pip install setuptools
@@ -52,7 +51,7 @@ matrix:
     - 
       language: generic
       os: osx
-      osx_image: xcode9.4
+      # osx_image: xcode9.4
       python: 3.6.5
       before_install:
         - sudo pip install setuptools
@@ -61,7 +60,7 @@ matrix:
     - 
       language: generic
       os: osx
-      osx_image: xcode10.2
+      # osx_image: xcode10.2
       python: 3.7.3
       before_install:
         - sudo pip install setuptools
