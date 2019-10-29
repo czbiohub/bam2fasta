@@ -44,7 +44,7 @@ matrix:
     - 
       language: generic
       os: osx
-      python: 3.5.1
+      python: 3.5
       before_script:
         - sudo $PIP install -U pip setuptools
       install: 
