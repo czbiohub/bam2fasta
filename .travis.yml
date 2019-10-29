@@ -12,7 +12,7 @@ addons:
       - libcurl4-openssl-dev
       - libssl-dev
 
-matrix:
+jobs:
   include:
   - os: linux
     env: PYTHON=2.7
@@ -29,16 +29,19 @@ matrix:
   # Sierra (10.12)
   - os: osx
     osx_image: xcode9.2
+    language: generic
     env: PYTHON=2.7
   # "Generic Python 3.5 on macOS"
   - os: osx
-    language: shell  # 'language: python' is an error on Travis CI macOS
-    env: PYTHON=3.5.1
+    language: generic  # 'language: python' is an error on Travis CI macOS
+    python =3.5.1
   - os: osx
     osx_image: xcode9.4
+    language: generic
     env: PYTHON=3.6.5
   - os: osx
     osx_image: xcode10.2
+    language: generic
     env: PYTHON=3.7.3
 
 # command to install dependencies
