@@ -17,6 +17,8 @@ convert
 
 
 def main():
+    """Group the bam2fasta commands
+    currently convert is the only command under bam2fasta cli tool"""
     logging.basicConfig(
         format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s', # noqa
         datefmt='%Y-%m-%d:%H:%M:%S',

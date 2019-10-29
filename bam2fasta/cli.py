@@ -62,7 +62,7 @@ def calculate_chunksize(total_jobs_todo, processes):
 
 
 def convert(args):
-
+    """Cli tool to convert bam to fasta files"""
     parser = create_parser()
     args = parser.parse_args(args)
 
@@ -180,6 +180,8 @@ def convert(args):
         f.close()
 
     def write_to_barcode_meta_csv():
+        """ Merge all the meta text files for each barcode to
+        one csv file with CELL_BARCODE, UMI_COUNT,READ_COUNT"""
         barcodes_meta_txts = glob.glob("*_meta.txt")
 
         with open(args.write_barcode_meta_csv, "w") as fp:
@@ -198,8 +200,8 @@ def convert(args):
                                                  read_count))
 
     def get_unique_barcodes(all_fastas):
-        # Build a dictionary with each unique barcode as key and
-        # their fasta files from different shards
+        """ Build a dictionary with each unique barcode as key and
+        their fasta files from different shards """
         fasta_files_dict = OrderedDict()
         for fasta in iter_split(all_fastas, ","):
             barcode = os.path.basename(fasta).replace(".fasta", "")
