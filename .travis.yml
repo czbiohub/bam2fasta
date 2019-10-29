@@ -23,13 +23,13 @@ python:
   - '3.6.7'
   - '3.7.1'
 # command to install dependencies
+before_install:
+  - python --version
+  - pip install -U pip
+  - pip install -U pytest
+  - pip install codecov
 install:
-  - pip install -r requirements.txt
-script:
-  # command to lint code
-  - flake8 --config .flake8
-  # command to run tests
-  - python2.7 -m pytest --cov=. --cov-report term-missing
-  - python3.5 -m pytest --cov=. --cov-report term-missing
-  - python3.6 -m pytest --cov=. --cov-report term-missing
-  - python3.7 -m pytest --cov=. --cov-report term-missing
+  - python setup.py install # install package + test dependencies
+script: pytest # run tests
+after_success:
+  - codecov # submit coverage
