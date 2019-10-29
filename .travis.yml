@@ -6,6 +6,7 @@ os:
   - linux
   - osx
 
+language: generic
 compiler:
   - gcc
   - clang
@@ -30,6 +31,6 @@ before_install:
   - pip install codecov
 install:
   - python setup.py install # install package + test dependencies
-script: pytest # run tests
-after_success:
+script: 
+  - pytest # run tests
   - codecov # submit coverage
