@@ -23,7 +23,7 @@ Bam2fasta info command:
 
 Bam2fasta convert takes BAM and/or barcode files as input. Examples:
 	
-	bam2fasta convert filename.bam
+	bam2fasta convert --filename filename.bam
 
 * [Main arguments](#main-arguments)
     * [`--filename`](#--filename)
