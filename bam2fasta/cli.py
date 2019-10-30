@@ -308,10 +308,10 @@ def convert(args):
     logger.info("Pooled %d and chunksize %d mapped",
                 n_jobs, chunksize)
 
-    fastas = itertools.chain(*(list(pool.imap(
+    fastas = (list(pool.imap(
         lambda index: collect_reduce_temp_fastas(index),
         range(unique_barcodes),
-        chunksize=chunksize))))
+        chunksize=chunksize)))
 
     pool.close()
     pool.join()
