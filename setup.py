@@ -18,7 +18,7 @@ CLASSIFIERS = [
     "Environment :: Console",
     "Environment :: MacOS X",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: BSD License",
+    "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS :: MacOS X",
@@ -26,6 +26,7 @@ CLASSIFIERS = [
     "Programming Language :: Python :: 2.7",
     "Programming Language :: Python :: 3.5",
     "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 
