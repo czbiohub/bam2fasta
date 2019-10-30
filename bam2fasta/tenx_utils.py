@@ -97,8 +97,7 @@ def read_bam_file(bam_path):
     Parameters
     ----------
     bam_path : str
-        Name of a 10x cellranger bam file
-        'possorted_genome_bam.bam'
+        Name of a 10x bam file
     Returns
     -------
     bam_file : pysam.AlignmentFile

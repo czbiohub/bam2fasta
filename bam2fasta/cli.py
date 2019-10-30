@@ -15,7 +15,7 @@ import numpy as np
 from pathos import multiprocessing
 
 from bam2fasta import tenx_utils
-from bam2fasta.bam2fasta_args import create_parser
+from bam2fasta.bam2fasta_args import create_parser, Bam2FastaArgumentParser
 from bam2fasta import np_utils
 
 
@@ -60,6 +60,33 @@ def calculate_chunksize(total_jobs_todo, processes):
     if extra:
         chunksize += 1
     return chunksize
+
+
+def info(args):
+    "Report bam2fasta version + version of installed dependencies."
+    parser = Bam2FastaArgumentParser()
+    parser.add_argument(
+        '-v', '--verbose', action='store_true',
+        help='report versions of pathos, pysam, and screed')
+    args = parser.parse_args(args)
+
+    from bam2fasta import VERSION
+    logger.info('bam2fasta version %s', VERSION)
+    logger.info('- loaded from path: %s', os.path.dirname(__file__))
+    logger.info('')
+
+    if args.verbose:
+        import pathos
+        logger.info('pathos version %s', pathos.__version__)
+        logger.info('- loaded from path: %s', os.path.dirname(pathos.__file__))
+        logger.info('')
+        import pysam
+        logger.info('pysam version %s', pysam.__version__)
+        logger.info('- loaded from path: %s', os.path.dirname(pysam.__file__))
+        logger.info('')
+
+        logger.info('screed version %s', screed.__version__)
+        logger.info('- loaded from path: %s', os.path.dirname(screed.__file__))
 
 
 def convert(args):

@@ -1,5 +1,7 @@
 from bam2fasta.tests import bam2fasta_tst_utils as utils
 from bam2fasta import cli
+from bam2fasta import VERSION
+
 import os
 import screed
 
@@ -21,6 +23,28 @@ def test_iter_split():
         '/path/path2/2.fasta',
         '/path/path2/3.fasta']
     assert expected == obtained
+
+
+def test_bam2fasta_info():
+    status, out, err = utils.run_shell_cmd('bam2fasta info')
+
+    # no output to stderr
+    assert not err
+    print(status, out, err)
+    assert "bam2fasta version" in out
+    assert "loaded from path" in out
+    assert VERSION in out
+
+
+def test_bam2fasta_info_verbose():
+    status, out, err = utils.run_shell_cmd('bam2fasta info -v')
+
+    # no output to stderr
+    assert not err
+    assert "pathos version" in out
+    assert "screed version" in out
+    assert "pysam version" in out
+    assert "loaded from path" in out
 
 
 def test_calculate_chunksize():

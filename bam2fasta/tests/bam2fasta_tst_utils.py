@@ -7,7 +7,7 @@ import shutil
 
 class TempDirectory(object):
     def __init__(self):
-        self.tempdir = tempfile.mkdtemp(prefix='sourmashtest_')
+        self.tempdir = tempfile.mkdtemp(prefix='bam2fastatest_')
 
     def __enter__(self):
         return self.tempdir
@@ -27,7 +27,7 @@ def get_test_data(filename):
     try:
         filepath = resource_filename(
             Requirement.parse(
-                "sourmash"), "sourmash/sourmash/test-data/" + filename)
+                "bam2fasta"), "bam2fasta/bam2fasta/test-data/" + filename)
     except ResolutionError:
         pass
     if not filepath or not os.path.isfile(filepath):
