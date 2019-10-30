@@ -323,4 +323,3 @@ def convert(args):
         time.time() - startt)
 
     return fastas
-
