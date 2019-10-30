@@ -111,3 +111,16 @@ def test_run_bam2fasta_default_args():
         fasta_files = os.listdir(fastas_dir)
         barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
         assert len(barcodes) == 8
+
+
+def test_run_convert():
+    with utils.TempDirectory() as location:
+        testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+        fastas_dir = os.path.join(location)
+        if not os.path.exists(fastas_dir):
+            os.makedirs(fastas_dir)
+
+        fasta_files = cli.convert(['--filename', testdata1])
+
+        barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
+        assert len(barcodes) == 8
