@@ -45,7 +45,7 @@ SETUP_METADATA = \
         "author_email": "pranathi93.vemuri@gmail.com",
         "maintainer": "Pranathi Vemuri",
         "maintainer_email": "pranathi93.vemuri@gmail.com",
-        "license": "BSD 3-clause",
+        "license": "MIT License",
         "packages": find_packages(exclude=["tests", "benchmarks"]),
         "entry_points": {'console_scripts': [
             'bam2fasta = bam2fasta.__main__:main']},
