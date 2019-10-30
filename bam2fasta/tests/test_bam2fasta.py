@@ -121,7 +121,7 @@ def test_run_convert():
         if not os.path.exists(fastas_dir):
             os.makedirs(fastas_dir)
 
-        fasta_files = cli.convert(['--filename', testdata1])
+        fasta_files = cli.convert(['--filename', testdata1, '--save-fastas', location])
 
         barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
         assert len(barcodes) == 8
