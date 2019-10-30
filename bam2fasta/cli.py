@@ -149,6 +149,8 @@ def convert(args):
         # close the fasta file
         f.close()
 
+        return os.path.join(args.save_fastas, unique_fasta_file)
+
     def filtered_umi_to_fasta(index):
         """Returns signature records for all the fasta files for a unique
         barcode, only if it has more than min_umi_per_barcode number of umis"""
@@ -206,6 +208,7 @@ def convert(args):
 
         # close the opened fasta file
         f.close()
+        return os.path.join(args.save_fastas, unique_fasta_file)
 
     def write_to_barcode_meta_csv():
         """ Merge all the meta text files for each barcode to
@@ -251,7 +254,7 @@ def convert(args):
         barcodes = None
 
     # Shard bam file to smaller bam file
-    logger.info('... reading bam file from {}'.format(args.filename))
+    logger.info('... reading bam file from %s', args.filename)
     n_jobs = args.processes
     filenames, mmap_file = np_utils.to_memmap(np.array(
         tenx_utils.shard_bam_file(
@@ -302,13 +305,13 @@ def convert(args):
 
     pool = multiprocessing.Pool(processes=n_jobs)
     chunksize = calculate_chunksize(unique_barcodes, n_jobs)
-    logger.info("Pooled {} and chunksize {} mapped".format(
-        n_jobs, chunksize))
+    logger.info("Pooled %d and chunksize %d mapped",
+                n_jobs, chunksize)
 
-    list(pool.imap(
+    fastas = itertools.chain(*(list(pool.imap(
         lambda index: collect_reduce_temp_fastas(index),
         range(unique_barcodes),
-        chunksize=chunksize))
+        chunksize=chunksize))))
 
     pool.close()
     pool.join()
@@ -316,5 +319,8 @@ def convert(args):
     if args.write_barcode_meta_csv:
         write_to_barcode_meta_csv()
     logger.info(
-        "time taken to convert fastas for 10x folder is {:.5f} seconds",
+        "time taken to convert fastas for 10x folder is %.5f seconds",
         time.time() - startt)
+
+    return fastas
+
