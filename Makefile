@@ -13,6 +13,9 @@ install: all
 dist: FORCE
 	$(PYTHON) setup.py sdist
 
+wheel:
+	$(PYTHON) setup.py bdist_wheel
+
 test: all
 	pip install -e '.[test]'
 	$(PYTHON) -m pytest
