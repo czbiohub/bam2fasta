@@ -90,7 +90,7 @@ deactivate
 source bin/activate
 pip install -U setuptools
 # install as much as possible from non-test server!
-pip install screed pytest pathos tqdm pysam numpy
+pip install screed pytest pytest-cov pathos tqdm pysam numpy
 pip install -i https://test.pypi.org/simple --pre bam2fasta
 bam2fasta info  # should print "bam2fasta version ${new_version}${rc}"
 ```
@@ -129,14 +129,14 @@ git push --delete https://github.com/czbiohub/bam2fasta.git v${new_version}${rc}
 The BiocondaBot has an `autobump` feature that should pick up new releases from PyPI, and open a PR in Bioconda. Review any changes
 (especially dependency versions, since these don't get picked up).
 
-This is an example PR (for `1.0.0`): https://github.com/bioconda/bioconda-recipes/pull/17113
+This is an example PR: https://github.com/bioconda/bioconda-recipes/pull/17113
 
 ## Announce it!
 
 If a bioinformatics software is released and no one tweets, is it really released?
 
 Examples:
-1.0.0 https://twitter.com/luizirber/status/1108846466502520832
+https://twitter.com/luizirber/status/1108846466502520832
 
 ## To test on a blank Ubuntu system, may have to sudo
 
