@@ -70,8 +70,9 @@ def test_run_bam2fasta_supply_all_args():
             os.makedirs(fastas_dir)
 
         status, out, err = utils.run_shell_cmd(
-            'bam2fasta convert --min-umi-per-barcode 10 --filename ' +
-            testdata1 + ' --write-barcode-meta-csv ' + csv_path +
+            'bam2fasta convert --filename ' + testdata1 +
+            ' --min-umi-per-barcode 10' +
+            ' --write-barcode-meta-csv ' + csv_path +
             ' --barcodes ' + barcodes_path + ' --rename-10x-barcodes ' +
             renamer_path + ' --save-fastas ' + fastas_dir + " --processes 1",
             in_directory=location)
