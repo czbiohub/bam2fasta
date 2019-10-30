@@ -1,5 +1,5 @@
 import bam2fasta.tenx_utils as tenx
-from tests import bam2fasta_tst_utils as utils
+from bam2fasta.tests import bam2fasta_tst_utils as utils
 import pysam as bs
 
 
