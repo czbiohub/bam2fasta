@@ -1,0 +1,6 @@
+include LICENSE Makefile README.md requirements.txt
+exclude tests/*
+global-exclude *.orig
+global-exclude *.pyc
+global-exclude *.so
+prune tests/test-data/
