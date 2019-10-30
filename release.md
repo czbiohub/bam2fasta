@@ -121,17 +121,16 @@ git tag -d v${new_version}${rc}
 git push --tags https://github.com/czbiohub/bam2fasta.git
 git push --delete https://github.com/czbiohub/bam2fasta.git v${new_version}${rc}
 ```
-4. Add the release on GitHub, using the tag you just pushed.  Name
-   it 'version X.Y.Z', and copy and paste in the release notes:
+4. Add the release on GitHub, using the tag you just pushed.  Name it 'version X.Y.Z'
 
-## Bioconda
+## Bioconda - Not currently supported yet
 
 The BiocondaBot has an `autobump` feature that should pick up new releases from PyPI, and open a PR in Bioconda. Review any changes
 (especially dependency versions, since these don't get picked up).
 
 This is an example PR: https://github.com/bioconda/bioconda-recipes/pull/17113
 
-## Announce it!
+## Announce it - Not currently doing this yet
 
 If a bioinformatics software is released and no one tweets, is it really released?
 
