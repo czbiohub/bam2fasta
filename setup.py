@@ -41,7 +41,7 @@ SETUP_METADATA = \
         "description": "tool for converting a bam file to fastas",
         "long_description": LONG_DESCRIPTION,
         "long_description_content_type": "text/markdown",
-        "url": "https://github.com/pranathivemuri/bam2fasta",
+        "url": "https://github.com/czbiohub/bam2fasta",
         "author": "Pranathi Vemuri",
         "author_email": "pranathi93.vemuri@gmail.com",
         "maintainer": "Pranathi Vemuri",
