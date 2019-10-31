@@ -308,10 +308,10 @@ def convert(args):
     logger.info("Pooled %d and chunksize %d mapped",
                 n_jobs, chunksize)
 
-    fastas = (list(pool.imap(
+    fastas = list(pool.imap(
         lambda index: collect_reduce_temp_fastas(index),
         range(unique_barcodes),
-        chunksize=chunksize)))
+        chunksize=chunksize))
 
     pool.close()
     pool.join()
@@ -321,5 +321,5 @@ def convert(args):
     logger.info(
         "time taken to convert fastas for 10x folder is %.5f seconds",
         time.time() - startt)
-
+    fastas = [fasta for fasta in fastas if fasta != []]
     return fastas
