@@ -7,7 +7,11 @@ Free software: MIT license
 ## Installation
 Latest version can be installed via pip package `bam2fasta`.
 
-To install this code in developing, clone this github repository and use pip to install
+Quick install
+
+    pip install bam2fasta
+
+To install this code in developing mode, clone this github repository and run setup as below
 
 	git clone https://github.com/czbiohub/bam2fasta.git
 	cd bam2fasta
@@ -21,9 +25,10 @@ Bam2fasta info command:
     bam2fasta info
     bam2fasta info -v
 
-Bam2fasta convert takes BAM and/or barcode files as input. Examples:
+Bam2fasta convert command, it takes BAM and/or barcode files as input. Examples:
 	
-	bam2fasta convert --filename filename.bam
+	  bam2fasta convert --filename filename.bam 
+    bam2fasta convert --filename 10x-example/possorted_genome_bam.bam --save-fastas fastas --min-umi-per-barcode 10  --write-barcode-meta-csv all_barcodes_meta.csv --barcodes 10x-example/barcodes.tsv --rename-10x-barcodes 10x-example/barcodes_renamer.tsv --line_count 150
 
 * [Main arguments](#main-arguments)
     * [`--filename`](#--filename)
