@@ -208,7 +208,7 @@ def bam_to_temp_fasta(barcodes, barcode_renamer, delimiter, bam_file):
 
         # Make a long string of all the cell sequences, separated
         # by a non-alphabet letter
-        cell_sequences[renamed] += alignment.seq + delimiter
+        cell_sequences[renamed] += alignment.query_alignment_sequence + delimiter
 
     filenames = list(set(write_cell_sequences(cell_sequences, delimiter)))
     logger.info("bam_to_fasta conversion completed on %s", bam_file)
