@@ -30,6 +30,16 @@ def create_parser():
         "than min-umi-per-barcode. It is used to weed out cell barcodes "
         "with few umis that might have been due to false rna enzyme reactions")
     parser.add_argument(
+        '--whitelist-merge-barcode', action='store_true', default=False,
+        help="whitelist merge reduce barcodes containing Ns,"
+        "for example if there is a barcode containing N say ATTGGGCCTTAN"
+        "all the barcodes that are at a hamming distance of 1 by changing N"
+        "ATTGGGCCTTAA ATTGGGCCTTAG ATTGGGCCTTAC ATTGGGCCTTAT"
+        "are checked for their existence, and the ATTGGGCCTTAN barcode"
+        "is declared as the barcode that exists with highest number of UMIs"
+        "so its basically saved as the ATTGGGCCTTAG.fasta if lets say that"
+        "this barcode exists and has enough UMIs,")
+    parser.add_argument(
         '--write-barcode-meta-csv', type=str,
         help="For each of the unique barcodes, "
         "Write to a given path, number of reads"

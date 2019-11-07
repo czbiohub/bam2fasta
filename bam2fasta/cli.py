@@ -3,6 +3,7 @@ Cli tool to convert 10x bam to fastas
 """
 
 import itertools
+import tempfile
 import time
 import os
 import glob
@@ -12,6 +13,7 @@ from functools import partial
 
 import screed
 import numpy as np
+import pandas as pd
 from pathos import multiprocessing
 
 from bam2fasta import tenx_utils
@@ -25,6 +27,7 @@ DELIMITER = "X"
 CELL_BARCODE = "CELL_BARCODE"
 UMI_COUNT = "UMI_COUNT"
 READ_COUNT = "READ_COUNT"
+BASEPAIRS = ["A", "G", "C", "T"]
 
 
 def iter_split(string, sep=None):
@@ -96,18 +99,10 @@ def convert(args):
 
     logger.info(args)
 
-    umi_filter = True if args.min_umi_per_barcode != 0 else False
     all_fastas_sorted = []
     all_fastas = ""
 
     def collect_reduce_temp_fastas(index):
-        """Convert fasta to sig record"""
-        if umi_filter:
-            return filtered_umi_to_fasta(index)
-        else:
-            return unfiltered_umi_to_fasta(index)
-
-    def unfiltered_umi_to_fasta(index):
         """Returns signature records across fasta files for a unique barcode"""
 
         # Getting all fastas for a given barcode
@@ -151,7 +146,7 @@ def convert(args):
 
         return os.path.join(args.save_fastas, unique_fasta_file)
 
-    def filtered_umi_to_fasta(index):
+    def write_metadata_per_barcode(index):
         """Returns signature records for all the fasta files for a unique
         barcode, only if it has more than min_umi_per_barcode number of umis"""
 
@@ -169,53 +164,19 @@ def convert(args):
             for record in screed.open(fasta):
                 umis[record.name] += record.sequence.count(args.delimiter)
 
-        if args.write_barcode_meta_csv:
-            unique_fasta_file = os.path.basename(fasta)
-            unique_meta_file = unique_fasta_file.replace(".fasta", "_meta.txt")
-            with open(unique_meta_file, "w") as f:
-                f.write("{} {}".format(len(umis), sum(list(umis.values()))))
+        unique_fasta_file = os.path.basename(fasta)
+        unique_meta_file = unique_fasta_file.replace(".fasta", "_meta.txt")
+        with open(unique_meta_file, "w") as f:
+            f.write("{} {}".format(len(umis), sum(list(umis.values()))))
 
         logger.debug("Completed tracking umi counts")
-        if len(umis) < args.min_umi_per_barcode:
-            return []
-        count = 0
-        for fasta in iter_split(single_barcode_fastas, ","):
-
-            # Initializing fasta file to save the sequence to
-            if count == 0:
-                unique_fasta_file = os.path.basename(fasta)
-                barcode_name = unique_fasta_file.replace(".fasta", "")
-                f = open(
-                    os.path.join(args.save_fastas, unique_fasta_file), "w")
-
-            # Add sequences of barcodes with more than min-umi-per-barcode umis
-            for record in screed.open(fasta):
-                sequence = record.sequence
-                umi = record.name
-
-                # Appending sequence of a umi to the fasta
-                split_seqs = sequence.split(args.delimiter)
-                for index, seq in enumerate(split_seqs):
-                    if seq == "":
-                        continue
-                    f.write(">{}\n{}\n".format(
-                        barcode_name + "_" + umi + "_" + '{:03d}'.format(
-                            index), seq))
-            # Delete fasta file in tmp folder
-            if os.path.exists(fasta):
-                os.unlink(fasta)
-            count += 1
-
-        # close the opened fasta file
-        f.close()
-        return os.path.join(args.save_fastas, unique_fasta_file)
 
     def write_to_barcode_meta_csv():
         """ Merge all the meta text files for each barcode to
         one csv file with CELL_BARCODE, UMI_COUNT,READ_COUNT"""
         barcodes_meta_txts = glob.glob("*_meta.txt")
 
-        with open(args.write_barcode_meta_csv, "w") as fp:
+        with open(metadata_csv_file, "w") as fp:
             fp.write("{},{},{}".format(CELL_BARCODE, UMI_COUNT,
                                        READ_COUNT))
             fp.write('\n')
@@ -246,6 +207,12 @@ def convert(args):
     # Initializing time
     startt = time.time()
 
+    # set barcodes metadata csv file
+    if args.write_barcode_meta_csv:
+        metadata_csv_file = args.write_barcode_meta_csv
+    elif args.whitelist_merge_barcode:
+        temp_folder = tempfile.mkdtemp()
+        metadata_csv_file = os.path.join(temp_folder, "barcodes_metadata.csv")
     # Setting barcodes file, some 10x files don't have a filtered
     # barcode file
     if args.barcodes_file is not None:
@@ -303,6 +270,46 @@ def convert(args):
     # Cleaning up to retrieve memory from unused large variables
     del all_fastas
 
+    # Getting the barcode metadata csv file that has for each unique barcode
+    # its name, umi count, read count
+    if args.min_umi_per_barcode != 0 or args.whitelist_merge_barcode:
+        pool = multiprocessing.Pool(processes=n_jobs)
+        chunksize = calculate_chunksize(unique_barcodes, n_jobs)
+        logger.info("Pooled %d and chunksize %d mapped",
+                    n_jobs, chunksize)
+
+        list(pool.imap(
+            lambda index: write_metadata_per_barcode(index),
+            range(unique_barcodes),
+            chunksize=chunksize))
+        write_to_barcode_meta_csv()
+
+    if args.whitelist_merge_barcode:
+        df = pd.read_csv(metadata_csv_file)
+        cell_barcodes = list(df.CELL_BARCODE)
+        cell_barcodes_with_n = [
+            barcode for barcode in cell_barcodes if "N" in barcode]
+
+        for barcode_with_n in cell_barcodes_with_n:
+            close_barcodes = [
+                barcode_with_n.replace("N", basepair) for basepair in BASEPAIRS if barcode_with_n.replace("N", basepair) in cell_barcodes]
+            dfs = []
+            for close_barcode in close_barcodes:
+                filtered_df = df[CELL_BARCODE] == close_barcode
+                dfs.append(df[filtered_df])
+            if len(dfs) > 0:
+                concat_df = pd.concat(dfs, ignore_index=True)
+                max_umi_count_close_barcode = concat_df[
+                    concat_df[UMI_COUNT] == max(
+                        concat_df[UMI_COUNT])][CELL_BARCODE].tolist()[0]
+                print(concat_df, barcode_with_n, max_umi_count_close_barcode)
+                df.replace(barcode_with_n, max_umi_count_close_barcode, inplace=True)
+
+        df = df.groupby([CELL_BARCODE]).agg({READ_COUNT: 'sum', UMI_COUNT: 'sum'}).reset_index()
+        df = df[df[UMI_COUNT] >= args.min_umi_per_barcode]
+
+        df.to_csv(metadata_csv_file)
+
     pool = multiprocessing.Pool(processes=n_jobs)
     chunksize = calculate_chunksize(unique_barcodes, n_jobs)
     logger.info("Pooled %d and chunksize %d mapped",
@@ -316,8 +323,6 @@ def convert(args):
     pool.close()
     pool.join()
 
-    if args.write_barcode_meta_csv:
-        write_to_barcode_meta_csv()
     logger.info(
         "time taken to convert fastas for 10x folder is %.5f seconds",
         time.time() - startt)
