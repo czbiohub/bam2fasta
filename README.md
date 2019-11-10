@@ -27,18 +27,23 @@ Bam2fasta info command:
 
 Bam2fasta convert command, it takes BAM and/or barcode files as input. Examples:
 	
-	  bam2fasta convert --filename filename.bam 
-    bam2fasta convert --filename 10x-example/possorted_genome_bam.bam --save-fastas fastas --min-umi-per-barcode 10  --write-barcode-meta-csv all_barcodes_meta.csv --barcodes 10x-example/barcodes.tsv --rename-10x-barcodes 10x-example/barcodes_renamer.tsv --line_count 150
+	bam2fasta convert --filename filename.bam 
+	bam2fasta convert --filename 10x-example/possorted_genome_bam.bam \
+		--save-fastas fastas --min-umi-per-barcode 10 \
+		--write-barcode-meta-csv all_barcodes_meta.csv \
+		--barcodes 10x-example/barcodes.tsv \
+		--rename-10x-barcodes 10x-example/barcodes_renamer.tsv \
+		--line-count 150
 
 * [Main arguments](#main-arguments)
     * [`--filename`](#--filename)
    	* [Bam optional parameters](#bam-optional-parameters)
-        * [`--barcodes_file`](#--barcodes_file)
-        * [`--rename_10x_barcodes`](#--rename_10x_barcodes)
-        * [`--save_fastas`](#--save_fastas)
-        * [`--min_umi_per_barcode`](#--min_umi_per_barcode)
-        * [`--write_barcode_meta_csv`](#--write_barcode_meta_csv)
-        * [`--line_count`](#--line_count)
+        * [`--barcodes-file`](#--barcodes-file)
+        * [`--rename-10x-barcodes`](#--rename-10x-barcodes)
+        * [`--save-fastas`](#--save-fastas)
+        * [`--min-umi-per-barcode`](#--min-umi-per-barcode)
+        * [`--write-barcode-meta-csv`](#--write-barcode-meta-csv)
+        * [`--line-count`](#--line-count)
 
 
 ### `--bam`
@@ -51,34 +56,34 @@ For bam/10x files, Use this to specify the location of the bam file. For example
 ## Bam optional parameters
 
 
-### `--barcodes_file`
+### `--barcodes-file`
 For bam/10x files, Use this to specify the location of tsv (tab separated file) containing cell barcodes. For example:
 
 ```bash
---barcodes_file /path/to/data/10x-example/barcodes.tsv
+--barcodes-file /path/to/data/10x-example/barcodes.tsv
 ```
 
 If left unspecified, barcodes are derived from bam are used.
 
-### `--rename_10x_barcodes`
+### `--rename-10x-barcodes`
 For bam/10x files, Use this to specify the location of your tsv (tab separated file) containing map of cell barcodes and their corresponding new names(e.g row in the tsv file: AAATGCCCAAACTGCT-1    lung_epithelial_cell|AAATGCCCAAACTGCT-1). 
 For example:
 
 ```bash
---rename_10x_barcodes /path/to/data/10x-example/barcodes_renamer.tsv
+--rename-10x-barcodes /path/to/data/10x-example/barcodes_renamer.tsv
 ```
 If left unspecified, barcodes in bam as given in barcodes_file are not renamed.
 
 
 ### `--save_fastas`
 
-1. The [save_fastas ](#--save_fastas ) used to save the sequences of each unique barcode in the bam file. By default, they are saved inside working directory to save unique barcodes to files namely {CELL_BARCODE}.fasta. Otherwise absolute path given in save_fastas. 
+1. The [save_fastas ](#--save-fastas ) used to save the sequences of each unique barcode in the bam file. By default, they are saved inside working directory to save unique barcodes to files namely {CELL_BARCODE}.fasta. Otherwise absolute path given in save_fastas. 
 
 
 **Example parameters**
 
 * Default: Save fastas in current working directory:
-  * `--save_fastas "fastas"`
+  * `--save-fastas "fastas"`
 
 
 ### `--write_barcode_meta_csv`
@@ -86,7 +91,7 @@ This creates a CSV containing the number of reads and number of UMIs per barcode
 **Example parameters**
 
 * Default: barcode metadata is not saved 
-  * `--write_barcode_meta_csv "barcodes_counts.csv"`
+  * `--write-barcode-meta-csv "barcodes_counts.csv"`
 
 
 ### `--min_umi_per_barcode`
@@ -96,12 +101,12 @@ The parameter `--min_umi_per_barcode` ensures that a barcode is only considered 
 
 * Default: min_umi_per_barcode is 0
 * Set minimum UMI per cellular barcode as 10:
-  * `--min_umi_per_barcode 10`
+  * `--min-umi-per-barcode 10`
 
 
 ### `--line_count`
-The parameter `--line_count` specifies the number of alignments/lines in each bam shard.
+The parameter `--line-count` specifies the number of alignments/lines in each bam shard.
 **Example parameters**
 
 * Default: line_count is 1500
-  * `--line_count 400`
+  * `--line-count 400`
