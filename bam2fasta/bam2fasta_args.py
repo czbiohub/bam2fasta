@@ -45,7 +45,7 @@ def create_parser():
         help='save merged fastas for all the unique'
         'barcodes to {CELL_BARCODE}.fasta '
         'in the absolute path given by this flag'
-        'By default, fastas are not saved')
+        'By default, fastas are saved in current directory')
     parser.add_argument(
         '--line-count', type=int,
         help='Line/Alignment count for each bam shard',
