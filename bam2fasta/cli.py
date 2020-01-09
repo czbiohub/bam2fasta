@@ -3,10 +3,10 @@ Cli tool to convert 10x bam to fastas
 """
 
 import itertools
-import time
 import os
 import glob
 import logging
+import time
 from collections import defaultdict, OrderedDict
 from functools import partial
 
@@ -322,4 +322,5 @@ def convert(args):
         "time taken to convert fastas for 10x folder is %.5f seconds",
         time.time() - startt)
     fastas = [fasta for fasta in fastas if fasta != []]
+
     return fastas
