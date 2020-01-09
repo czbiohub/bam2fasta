@@ -1,3 +1,6 @@
+from pkg_resources import get_distribution, DistributionNotFound
+
+
 __version__ = '0.2.4dev0'
 
 
@@ -13,7 +16,6 @@ __license__ = 'MIT License'
 __copyright__ = 'Copyright (c) 2019 Chan Zuckerberg Biohub'
 
 
-from pkg_resources import get_distribution, DistributionNotFound
 try:
     VERSION = get_distribution(__name__).version
 except DistributionNotFound:  # pragma: no cover
