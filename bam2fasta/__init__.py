@@ -1,7 +1,7 @@
 from pkg_resources import get_distribution, DistributionNotFound
 
 
-__version__ = '1.0.1'
+__version__ = '1.0.1dev0'
 
 
 __title__ = 'bam2fasta'
