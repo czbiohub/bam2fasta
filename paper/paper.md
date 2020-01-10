@@ -36,29 +36,43 @@ Secondly `.bam` files can attribute to few limitations as discussed below. First
 
 ## Workflow
 
-The package contains solution for the above discussed problems by 
+The package contains solution for the above discussed problems by implementing the following steps.
 1. In the first step, sharding the `.bam` file into chunks of smaller `.bam` files and stores them in the machine's temporary folder, e.g. `/tmp`. The chunk size of the `.bam` file is a tunable parameter that can be accessed with `--line_count`; by default it is 1500 records. This process is done serially by iterating through the records in the `.bam` file, using `pysam`, a Python wrapper around samtools [@doi:10.1093/bioinformatics/btp352]. 
-2. Now we employ a MapReduce [@doi:10.1145/1327452.1327492] approach to the temporary `.bam` files to obtain all the reads per cell barcode in a `.fasta` file.
+### MapReduce: Map
+
+Now we employ a MapReduce [@doi:10.1145/1327452.1327492] approach to the temporary `.bam` files to obtain all the reads per cell barcode in a `.fasta` file.
 In the "Map" step, we distribute the computation i.e parsing the barcode, determining the quality of the read, and if record is not duplicated, in parallel across multiple processes on the temporary shards of `.bam` files. These bam shards create temporary `.fasta` files that contain for each read: the cell barcode, UMI and the aligned sequence.
-	i.There might be a cell barcode with a different umi that would be present in different chunks of these sharded `.bam` files. As a result we would have multiple temporary `.fasta` files for the same barcodes. We implemented a method to find the unique barcodes based on these temporary `.fasta` file names and then assigning each of the unique barcodes all the temporary barcode `.fasta` files created by different `.bam` shards in a dictionary.
-3. In the "Reduce" step, we concatenate strings of temporary `.fasta` file names for the same barcode, hence its memory consumption is less than it would be if appending to a list. These temporary `.fasta` files are iteratively split and then combined to one `.fasta` file per barcode by concatenating all the sequences obtained from different `.fasta` files. For each of the cell barcodes, only valid cell barcodes are obtained based on the number of UMI's per cell barcode given in flag `--min-umi-per-barcode`. Each barcodes with a subset of `.fasta`s with different UMI's are combined simultaneously and a fasta file with barcode and the concatenated sequence separated by `X` is written to a `.fasta` file using multiprocessing.
+	i.There might be a cell barcode with a different UMI that would be present in different chunks of these sharded `.bam` files. As a result we would have multiple temporary `.fasta` files for the same barcodes. We implemented a method to find unique barcodes based on the temporary `.fasta` file names, and for eacheach of the unique barcodes, assigned a temporary barcode `.fasta` files created by different `.bam` shards in a dictionary.
+### MapReduce: Reduce
+
+In the "Reduce" step, we combine all sequences for the same barcode.
+
+We accomplish this by concatenating strings of temporary `.fasta` file names for the same barcode, hence its memory consumption is less than it would be if appending to a Python `list` structure. 
+These temporary `.fasta` files are iteratively split and then combined to one `.fasta` file per barcode by concatenating all the sequences obtained from different `.fasta` files, separated by a user-specified delimiter. 
+For each of the cell barcodes, only valid cell barcodes are obtained based on the number of UMI's per cell barcode given in flag `--min-umi-per-barcode`. 
+Each barcodes with a subset of `.fasta`s with different UMI's are combined simultaneously and a fasta file with barcode and the concatenated sequence separated by `X` is written to a `.fasta` file using multiprocessing.
 
 ## Advantages
 
 bam2fasta has several adavantages.
-bam2fasta can read bam file of any size and convert to fasta quickly. This method primarily gives us time and memory performance improvement. It reduces time from days or just process running out of memory to hours which is concluded from testing on 6-12 GB bam files. bam2fasta take advantage of sharding which is analogous to tiled rendering in images to save memory and multiprocessing and string manipulations to save time. Depending on the size of `.bam` file and resources of the cluster/computer it can be further reduced. 
+`bam2fasta` can read `.bam` files of any size, and convert to FASTA format quickly. 
+It is fills the gap to quickly process single-cell RNA-seq `.bam` files, which have unique needs, such as filtering per cell barcode.
+This method primarily gives us time and memory performance improvement. 
+It reduces time from days or just process running out of memory to hours which is concluded from testing on 6-12 GB `.bam` files. 
+`bam2fasta` takes advantage of sharding which is analogous to tiled rendering in images to save memory and multiprocessing and string manipulations to save time. 
+Depending on the size of `.bam` file and resources of the cluster/computer it can be further reduced. 
 
 
 # Installation
 
-The bam2fasta package is programmed in python, and is available in the bioconda and pypi.
+The `bam2fasta` package is written in Python, and is available on the [Bioconda](https://bioconda.github.io/) [conda](https://docs.conda.io/en/latest/) channel and the [Python Package Index (PyPI)](https://pypi.org/).
 Documentation can be found at https://github.com/czbiohub/bam2fasta/
 
 
 # Acknowledgements
 
-This work was made possible through support from the Chan Zuckerberg Biohub
-Thank you Phoenix Logan, Saba Nafees, and Shayan Hosseinzadeh for helpful discussions.
+This work was made possible through support from the Chan Zuckerberg Biohub.
+Thank you Phoenix Logan (@phoenixAja), Saba Nafees (@snafees), and Shayan Hosseinzadeh (@shayanhoss) for helpful discussions.
 
 
 # References
