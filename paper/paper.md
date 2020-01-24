@@ -28,9 +28,9 @@ affiliations:
 
 # Summary
 
-Next generation sequencing such as Drop-Seq (add citation), 10x Genomics and other microfluidics platforms are making leaps over the last decades in the amount of data it can sequence in parallel. 
+Next generation sequencing such as Drop-Seq [@doi:10.1016/j.cell.2015.05.002], 10x Genomics and other microfluidics platforms are making leaps over the last decades in the amount of data it can sequence in parallel. 
 Droplet microfluidics allows Cell Barcodes (CB) with their RNA transcripts, labeled by unique molecule identifiers (UMIs) to be sequenced simultaneously with many other cell barcodes of a homogenized tissue. 
-After alignment, the cell barcodes are demultiplexed and whole sequencing run is stored as a binary alignment map file type known as a `.bam` file (citation). 
+After alignment, the cell barcodes are demultiplexed and whole sequencing run is stored as a binary alignment map file type known as a `.bam` file [@doi:10.1093/bioinformatics/btp352]. 
 As the demultiplexing occurs after alignment in every single-cell RNA-seq pipeline, these workflows don't produce single cell fasta's from the fastq for the whole sequencing run. 
 
 Thus, there are many RNA sequences in the bam file with potentially no filter on the minimum number of observations.
@@ -50,6 +50,13 @@ Firstly, loading them in memory all at once would require a lot of RAM depending
 Secondly,recursively going through each record in the `.bam` file and deduce sequence with higher quality and combine sequences with already exisiting barcodes, and different UMIs is memory intensive. This would need a look up dictionary to be updated as it loops through the records in the `.bam` file. This attributes to memory leaks and hangups while the huge `.bam` file is still loaded in memory. 
 Hence the package `bam2fasta` that saves fastas per cell barcode after the filtering using sharding and multiprocessing is implemented.
 
+Here is an example of the `.bam` file and using samtools
+`samtools view $bam | head`
+`A00111:50:H2H5YDMXX:1:1248:13160:2957	16	chr1	138063420	255	1S89M	*	0	0	TTAATAGTTGAAAGTTTATTATGGTTATCAATATTATATCTCAGTAAGAGTAAACAAAACAGTGGGGAAATTCAAGATAAATACACAGTA	F-8FFFFFFFF8FF8FFFFFFFFFFF-FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF-FFF	NH:i:1	HI:i:1	AS:i:87	nM:i:0	TX:Z:NM_001111316,+5016,89M1S;NM_011210,+4599,89M1S	GX:Z:Ptprc	GN:Z:Ptprc	RE:A:E	CR:Z:AGTTATGTCTCTCGTA	CY:Z:F888-FFFFFF8FFFF	UR:Z:AGGAGGTCTT	UY:Z:F88FFFFFFF	UB:Z:AGGAGGTCTT	BC:Z:CAGTACTG	QT:Z:FFFFFFFF	RG:Z:10X_P7_8:MissingLibrary:1:H2H5YDMXX:1`
+
+The resulting `.fasta` would look like
+`>lung_epithelial_cell|AAATGCCCAAACTGCT-1_GTCATCGCTA_000
+TAATAGTTGAAAGTTTATTATGGTTATCAATATTATATCTCAGTAAGAGTAAACAAAACAGTG`
 
 # Implementation
 
@@ -93,7 +100,7 @@ The `bam2fasta` package is written in Python, and is available on the [Bioconda]
 Documentation can be found at https://github.com/czbiohub/bam2fasta/
 
 
-# Figures
+# Figure
 
 ![The bam2fasta workflow as explained in the implementation is illustrated in the flowchart](bam2fasta_workflow.png)
 
