@@ -1,5 +1,5 @@
 # bam2fasta
-Convert 10x bam file to individual FASTA files of aligned reads per cell
+Convert 10x bam file to individual FASTA files per cell barcode
 
 Free software: MIT license
 
@@ -10,6 +10,7 @@ Latest version can be installed via pip package `bam2fasta`.
 Quick install
 
     pip install bam2fasta
+    conda install -c bioconda bam2fasta
 
 ## Usage
 
