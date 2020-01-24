@@ -113,7 +113,6 @@ def convert(args):
         # Getting all fastas for a given barcode
         # from different shards
         single_barcode_fastas = all_fastas_sorted[index]
-
         count = 0
         # Iterating through fasta files for single barcode from different
         # fastas
@@ -288,8 +287,6 @@ def convert(args):
         pool.imap(
             lambda x: func(x.encode('utf-8')),
             filenames, chunksize=chunksize))))
-    pool.close()
-    pool.join()
 
     # clean up the memmap and sharded intermediary bam files
     [os.unlink(file) for file in filenames if os.path.exists(file)]
@@ -302,8 +299,6 @@ def convert(args):
     logger.info("Found %d unique barcodes", unique_barcodes)
     # Cleaning up to retrieve memory from unused large variables
     del all_fastas
-
-    pool = multiprocessing.Pool(processes=n_jobs)
     chunksize = calculate_chunksize(unique_barcodes, n_jobs)
     logger.info("Pooled %d and chunksize %d mapped",
                 n_jobs, chunksize)
@@ -313,9 +308,6 @@ def convert(args):
         range(unique_barcodes),
         chunksize=chunksize))
 
-    pool.close()
-    pool.join()
-
     if args.write_barcode_meta_csv:
         write_to_barcode_meta_csv()
     logger.info(
@@ -323,4 +315,6 @@ def convert(args):
         time.time() - startt)
     fastas = [fasta for fasta in fastas if fasta != []]
 
+    pool.close()
+    pool.join()
     return fastas
