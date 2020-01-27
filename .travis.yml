@@ -17,21 +17,29 @@ matrix:
       python: 2.7
       install: 
         - pip install . -r requirements.txt
+      script:
+        - bam2fasta convert --filename ./tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --line-count 1500
     - 
       os: linux
       python: 3.5
       install: 
         - pip install . -r requirements.txt
+      script:
+        - bam2fasta convert --filename ./tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --line-count 1500
     - 
       os: linux
       python: 3.6.5
       install: 
         - pip install . -r requirements.txt
+      script:
+        - bam2fasta convert --filename ./tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --line-count 1500
     - 
       os: linux
       python: 3.7.3
       install: 
         - pip install . -r requirements.txt
+      script:
+        - bam2fasta convert --filename ./tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --line-count 1500
     - 
       language: generic
       os: osx
@@ -40,6 +48,8 @@ matrix:
         - sudo pip install setuptools
       install: 
         - sudo pip install . -r requirements.txt
+      script:
+        - bam2fasta convert --filename ./tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --line-count 1500
     - 
       language: generic
       os: osx
@@ -48,6 +58,8 @@ matrix:
         - sudo pip install setuptools
       install: 
         - sudo pip install . -r requirements.txt
+      script:
+        - bam2fasta convert --filename ./tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --line-count 1500
     - 
       language: generic
       os: osx
@@ -56,6 +68,8 @@ matrix:
         - sudo pip install setuptools
       install: 
         - sudo pip install . -r requirements.txt
+      script:
+        - bam2fasta convert --filename ./tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --line-count 1500
     - 
       language: generic
       os: osx
@@ -64,8 +78,12 @@ matrix:
         - sudo pip install setuptools
       install: 
         - sudo pip install . -r requirements.txt 
+      script:
+        - bam2fasta convert --filename ./tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --line-count 1500
+
 os: linux
 script: 
   - flake8 --config .flake8
   - pytest --cov=.
+  - bam2fasta convert --filename ./tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --line-count 1500
   - codecov
