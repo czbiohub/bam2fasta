@@ -12,13 +12,6 @@ Quick install
     pip install bam2fasta
     conda install -c bioconda bam2fasta
 
-To install this code in developing mode, clone this github repository and run setup as below
-
-	git clone https://github.com/czbiohub/bam2fasta.git
-	cd bam2fasta
-	python setup.py develop
-
-
 ## Usage
 
 Bam2fasta info command:
