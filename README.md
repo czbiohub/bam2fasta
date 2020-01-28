@@ -7,10 +7,26 @@ Free software: MIT license
 ## Installation
 Latest version can be installed via pip package `bam2fasta`.
 
-Quick install
+Quick install given you have the ssl and zlib packages are already installed.
 
     pip install bam2fasta
     conda install -c bioconda bam2fasta
+
+Please refer to .travis.yml to see what packages are apt addons on linux and linux addons are required
+
+For osx, before `pip install bam2fasta` install the below homebrew packages
+
+    sudo pip install setuptools
+    brew update
+    brew install openssl
+    brew install zlib
+
+For linux, before `pip install bam2fasta` install the below apt packages
+
+    apt-get install libbz2-dev
+    apt-get install libcurl4-openssl-dev
+    apt-get install libssl-dev
+
 
 ## Usage
 
