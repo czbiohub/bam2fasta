@@ -28,7 +28,7 @@ affiliations:
 
 # Summary
 
-Next generation sequencing such as Drop-Seq [McCarroll:2015], 10x Genomics and other microfluidics platforms are making leaps over the last decades in the amount of data it can sequence in parallel. 
+Single-cell RNA sequencing such as Drop-Seq [McCarroll:2015], 10x Genomics and other microfluidics platforms are making leaps over the last decades in the amount of data it can sequence in parallel. 
 Droplet microfluidics allows Cell Barcodes (CB) with their RNA transcripts, labeled by unique molecule identifiers (UMIs) to be sequenced simultaneously with many other cell barcodes of a homogenized tissue. 
 After alignment, the cell barcodes are demultiplexed and whole sequencing run is stored as a binary alignment map file type known as a `.bam` file [Li:2009]. 
 As the demultiplexing occurs after alignment in every single-cell RNA-seq pipeline, these workflows don't produce single cell fasta's from the fastq for the whole sequencing run. 
@@ -107,7 +107,7 @@ Documentation can be found at https://github.com/czbiohub/bam2fasta/
 
 # Glossary
 
-Sharding, splitting, tiling synonymously used terms represent looking at a subset of a complete dataset. When the dataset is images it's usually referred in image rendering world as tiling. In computer science, the most common term to explain the phenomenon for any dataset is sharding. 
+Sharding, splitting, tiling are synonymously used terms to represent looking at a subset of a complete dataset. When the dataset is images it's usually referred in image rendering world as tiling. In computer science, the most common term to explain the phenomenon for any dataset is sharding. 
 Sharding here is used to enable analyzing a large `.bam` file simultaneously on multiple processes.
 
 MapReduce is a phenomenon commonly used in the "Big Data" computing world to map a function/algorithm on a subset of data and reduce/combine the result from each piece of data.
