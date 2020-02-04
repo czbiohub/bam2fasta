@@ -54,7 +54,8 @@ SETUP_METADATA = \
                              "pathos==0.2.5",
                              "pysam==0.15.4",
                              "tqdm==4.36.1",
-                             "numpy==1.16.1"],
+                             "numpy==1.16.1",
+                             "cython>=0.29.12"],
         "setup_requires": [
             "setuptools>=38.6.0",
             "setuptools_scm",
