@@ -28,9 +28,9 @@ affiliations:
 
 # Summary
 
-Next generation sequencing such as Drop-Seq [@doi:10.1016/j.cell.2015.05.002], 10x Genomics and other microfluidics platforms are making leaps over the last decades in the amount of data it can sequence in parallel. 
+Next generation sequencing such as Drop-Seq [McCarroll:2015], 10x Genomics and other microfluidics platforms are making leaps over the last decades in the amount of data it can sequence in parallel. 
 Droplet microfluidics allows Cell Barcodes (CB) with their RNA transcripts, labeled by unique molecule identifiers (UMIs) to be sequenced simultaneously with many other cell barcodes of a homogenized tissue. 
-After alignment, the cell barcodes are demultiplexed and whole sequencing run is stored as a binary alignment map file type known as a `.bam` file [@doi:10.1093/bioinformatics/btp352]. 
+After alignment, the cell barcodes are demultiplexed and whole sequencing run is stored as a binary alignment map file type known as a `.bam` file [Li:2009]. 
 As the demultiplexing occurs after alignment in every single-cell RNA-seq pipeline, these workflows don't produce single cell fasta's from the fastq for the whole sequencing run. 
 
 Thus, there are many RNA sequences in the bam file with potentially no filter on the minimum number of observations.
@@ -65,11 +65,11 @@ TAATAGTTGAAAGTTTATTATGGTTATCAATATTATATCTCAGTAAGAGTAAACAAAACAGTG`
 The package contains solution for the above discussed problems by implementing the following steps.
 In the first step, sharding the `.bam` file into chunks of smaller `.bam` files and stores them in the machine's temporary folder, e.g. `/tmp`. 
 The chunk size of the `.bam` file is a tunable parameter that can be accessed with `--line-count`; by default it is 1500 records. 
-This process is done serially by iterating through the records in the `.bam` file, using `pysam`, a Python wrapper around samtools [@doi:10.1093/bioinformatics/btp352]. 
+This process is done serially by iterating through the records in the `.bam` file, using `pysam`, a Python wrapper around samtools [Li:2009]. 
 
 ### MapReduce: Map
 
-Now we employ a MapReduce [@doi:10.1145/1327452.1327492] approach to the temporary `.bam` files to obtain all the reads per cell barcode in a `.fasta` file.
+Now we employ a MapReduce [Dean:2008] approach to the temporary `.bam` files to obtain all the reads per cell barcode in a `.fasta` file.
 In the "Map" step, we distribute the computation i.e parsing the barcode, determining the quality of the read, and if record is not duplicated, in parallel across multiple processes on the temporary shards of `.bam` files. These bam shards create temporary `.fasta` files that contain for each read: the cell barcode, UMI and the aligned sequence.
 There might be a cell barcode with a different UMI that would be present in different chunks of these sharded `.bam` files. As a result we would have multiple temporary `.fasta` files for the same barcodes. 
 We implemented a method to find unique barcodes based on the temporary `.fasta` file names, and for each of the unique barcodes, assigned a temporary barcode `.fasta` files created by different `.bam` shards in a dictionary.
@@ -115,7 +115,7 @@ MapReduce is a phenomenon commonly used in the "Big Data" computing world to map
 # Acknowledgements
 
 This work was made possible through support from the Chan Zuckerberg Biohub.
-Thank you Phoenix Logan (@phoenixAja), Saba Nafees (@snafees), and Shayan Hosseinzadeh (@shayanhoss) for helpful discussions.
+Thank you Phoenix Logan, Saba Nafees, and Shayan Hosseinzadeh for helpful discussions.
 
 
 # References

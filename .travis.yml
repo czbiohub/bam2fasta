@@ -23,7 +23,7 @@ matrix:
       os: linux
       python: 3.5
       before_install:
-        - sudo apt install build-essential
+        - sudo apt-get update && sudo apt-get install -y autoconf automake make gcc perl zlib1g-dev libbz2-dev liblzma-dev libcurl4-gnutls-dev libssl-dev libncurses5-dev
       install: 
         - pip install . -r requirements.txt
       script:
@@ -32,7 +32,7 @@ matrix:
       os: linux
       python: 3.6.5
       before_install:
-        - sudo apt install build-essential
+        - sudo apt-get update && sudo apt-get install -y autoconf automake make gcc perl zlib1g-dev libbz2-dev liblzma-dev libcurl4-gnutls-dev libssl-dev libncurses5-dev
       install: 
         - pip install . -r requirements.txt
       script:
