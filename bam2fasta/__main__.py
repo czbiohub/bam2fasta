@@ -17,6 +17,11 @@ info
 '''
 
 
+def trace(frame, event, arg):
+    print("%s, %s:%d" % (event, frame.f_code.co_filename, frame.f_lineno))
+    return trace
+
+
 def main():
     """Group the bam2fasta commands
     currently convert, info are the commands under bam2fasta cli tool"""
@@ -46,4 +51,5 @@ def main():
 
 
 if __name__ == '__main__':
+    sys.settrace(trace)
     main()
