@@ -269,7 +269,8 @@ def convert(args):
         tenx_utils.bam_to_temp_fasta,
         barcodes,
         args.rename_10x_barcodes,
-        args.delimiter)
+        args.delimiter,
+        args.save_temp_fastas)
 
     length_sharded_bam_files = len(filenames)
     chunksize = calculate_chunksize(length_sharded_bam_files,

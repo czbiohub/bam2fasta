@@ -47,6 +47,11 @@ def create_parser():
         'in the absolute path given by this flag'
         'By default, fastas are saved in current directory')
     parser.add_argument(
+        '--save-temp-fastas', default="/tmp/", type=str,
+        help='save temporary fastas for chunks of bam files'
+        'in the absolute path given by this flag'
+        'By default, fastas are saved in temp directory')
+    parser.add_argument(
         '--line-count', type=int,
         help='Line/Alignment count for each bam shard',
         default=DEFAULT_LINE_COUNT)
