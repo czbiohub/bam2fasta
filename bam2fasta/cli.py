@@ -165,8 +165,6 @@ def convert(args):
         # fastas
         for fasta in iter_split(single_barcode_fastas, ","):
             # calculate unique umi, sequence counts
-            print("EXISTENCE CRITERIA")
-            print(fasta, os.path.exists(fasta))
             for record in screed.open(fasta):
                 umis[record.name] += record.sequence.count(args.delimiter)
 

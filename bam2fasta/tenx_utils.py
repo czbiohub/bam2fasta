@@ -2,10 +2,12 @@
 10x-sequencing specific utility functions.
 """
 
+import logging
 import os
 from collections import defaultdict
-import logging
+import tempfile
 import time
+
 from tqdm import tqdm
 import numpy as np
 
@@ -246,6 +248,7 @@ def write_cell_sequences(cell_sequences, temp_folder, delimiter="X"):
     filenames: generator
         one temp fasta filename for one cell/cell_umi with  sequence
     """
+    temp_folder = tempfile.mkdtemp(prefix=temp_folder)
     for cell, seq in cell_sequences.items():
         barcode, umi = cell.split(delimiter)
         filename = os.path.join(temp_folder, barcode + '.fasta')
