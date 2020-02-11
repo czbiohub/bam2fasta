@@ -79,7 +79,7 @@ def test_run_bam2fasta_supply_all_args():
             'bam2fasta convert --filename ' + testdata1 +
             ' --min-umi-per-barcode 10' +
             ' --write-barcode-meta-csv ' + csv_path +
-            ' --save-temp-fastas ' + temp_fastas_dir +
+            ' --save-intermediate-files ' + temp_fastas_dir +
             ' --barcodes ' + barcodes_path + ' --rename-10x-barcodes ' +
             renamer_path + ' --save-fastas ' + fastas_dir + " --processes 1",
             in_directory=location)
