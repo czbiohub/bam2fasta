@@ -69,7 +69,7 @@ def test_run_bam2fasta_supply_all_args():
         renamer_path = utils.get_test_data('10x-example/barcodes_renamer.tsv')
         fastas_dir = os.path.join(location, "fastas")
         temp_fastas_dir = os.path.join(
-            os.path.dirname(testdata1), "temp_fastas")
+            os.path.dirname(testdata1), "temp_fastas/")
         if not os.path.exists(fastas_dir):
             os.makedirs(fastas_dir)
         if not os.path.exists(temp_fastas_dir):
