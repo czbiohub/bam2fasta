@@ -1,6 +1,9 @@
+import tempfile
+
+import pysam as bs
+
 import bam2fasta.tenx_utils as tenx
 from bam2fasta.tests import bam2fasta_tst_utils as utils
-import pysam as bs
 
 
 def test_read_barcodes_file():
@@ -93,7 +96,8 @@ def test_bam_to_temp_fasta():
         barcodes=barcodes,
         barcode_renamer=None,
         delimiter="X",
-        bam_file=bam_file)
+        bam_file=bam_file,
+        temp_folder=tempfile.mkdtemp())
     assert len(list(fastas)) == 8
 
 
@@ -107,7 +111,8 @@ def test_bam_to_temp_fasta_rename_barcodes():
         barcodes=barcodes,
         barcode_renamer=renamer_filename,
         delimiter="X",
-        bam_file=bam_file)
+        bam_file=bam_file,
+        temp_folder=tempfile.mkdtemp())
     assert len(list(fastas)) == 8
 
 
@@ -118,7 +123,8 @@ def test_filtered_bam_to_umi_fasta():
         barcodes=None,
         barcode_renamer=None,
         delimiter='X',
-        bam_file=bam_file)
+        bam_file=bam_file,
+        temp_folder=tempfile.mkdtemp())
     assert len(list(fastas)) == 32
 
 
@@ -126,7 +132,8 @@ def test_write_sequences_no_umi():
     cell_sequences = {
         'AAATGCCCAAACTGCT-1X': "atgc",
         'AAATGCCCAAAGTGCT-1X': "gtga"}
-    fastas = list(tenx.write_cell_sequences(cell_sequences))
+    fastas = list(tenx.write_cell_sequences(
+        cell_sequences, temp_folder=tempfile.mkdtemp()))
     assert len(fastas) == len(cell_sequences)
     for fasta in fastas:
         assert fasta.endswith(".fasta")
@@ -137,7 +144,8 @@ def test_write_sequences_umi():
         'AAATGCCCAXAACTGCT-1': "atgc",
         'AAATGCCXCAAAGTGCT-1': "gtga",
         'AAATGCCXCAAAGTGCT-2': "gtgc"}
-    fastas = list(tenx.write_cell_sequences(cell_sequences))
+    fastas = list(tenx.write_cell_sequences(
+        cell_sequences, temp_folder=tempfile.mkdtemp()))
     assert len(fastas) == len(cell_sequences)
     for fasta in fastas:
         assert fasta.endswith(".fasta")
