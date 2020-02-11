@@ -259,7 +259,7 @@ def convert(args):
         tenx_utils.shard_bam_file(
             args.filename,
             args.line_count,
-            os.getcwd())))
+            args.save_intermediate_files)))
 
     # Create a per-cell fasta generator of sequences
     # If the reads should be filtered by barcodes and umis
@@ -269,7 +269,8 @@ def convert(args):
         tenx_utils.bam_to_temp_fasta,
         barcodes,
         args.rename_10x_barcodes,
-        args.delimiter)
+        args.delimiter,
+        args.save_intermediate_files)
 
     length_sharded_bam_files = len(filenames)
     chunksize = calculate_chunksize(length_sharded_bam_files,

@@ -2,11 +2,12 @@
 10x-sequencing specific utility functions.
 """
 
+import logging
 import os
 from collections import defaultdict
 import tempfile
-import logging
 import time
+
 from tqdm import tqdm
 import numpy as np
 
@@ -109,7 +110,8 @@ def read_bam_file(bam_path):
 
 
 def shard_bam_file(bam_file_path, chunked_file_line_count, shards_folder):
-    """Shard QC-pass bam file with the given line count and save to shards_folder
+    """Shard QC-pass bam file with the given line count
+       and save to shards_folder
 
     Parameters
     ----------
@@ -158,7 +160,8 @@ def shard_bam_file(bam_file_path, chunked_file_line_count, shards_folder):
     return file_names
 
 
-def bam_to_temp_fasta(barcodes, barcode_renamer, delimiter, bam_file):
+def bam_to_temp_fasta(
+        barcodes, barcode_renamer, delimiter, temp_folder, bam_file):
     """Convert 10x bam to one-record-per-cell fasta.
 
     Parameters
@@ -173,6 +176,8 @@ def bam_to_temp_fasta(barcodes, barcode_renamer, delimiter, bam_file):
         Non-DNA or protein alphabet character to be ignored, e.g. if a cell
         has two sequences 'AAAAAAAAA' and 'CCCCCCCC', they would be
         concatenated as 'AAAAAAAAAXCCCCCCCC'.
+    temp_folder: str
+        folder to save temporary fastas in
     Returns
     -------
     filenames: list
@@ -211,15 +216,16 @@ def bam_to_temp_fasta(barcodes, barcode_renamer, delimiter, bam_file):
         cell_sequences[renamed] += \
             alignment.query_alignment_sequence + delimiter
 
-    filenames = list(set(write_cell_sequences(cell_sequences, delimiter)))
-    logger.info("bam_to_fasta conversion completed on %s", bam_file)
+    filenames = list(set(write_cell_sequences(
+        cell_sequences, temp_folder, delimiter)))
+    logger.info("bam_to_temp_fasta conversion completed on %s", bam_file)
 
     bam.close()
 
     return filenames
 
 
-def write_cell_sequences(cell_sequences, delimiter="X"):
+def write_cell_sequences(cell_sequences, temp_folder, delimiter="X"):
     """
     Write each cell's sequences to an individual file
         Parameters
@@ -234,14 +240,15 @@ def write_cell_sequences(cell_sequences, delimiter="X"):
     fasta file
     delimiter : str, default X
         Used to separate barcode and umi in the cell sequences dict.
+    temp_folder: str
+        folder to save temporary fastas in
 
     Returns
     -------
     filenames: generator
         one temp fasta filename for one cell/cell_umi with  sequence
     """
-    temp_folder = tempfile.mkdtemp()
-
+    temp_folder = tempfile.mkdtemp(prefix=temp_folder)
     for cell, seq in cell_sequences.items():
         barcode, umi = cell.split(delimiter)
         filename = os.path.join(temp_folder, barcode + '.fasta')
