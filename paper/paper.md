@@ -58,7 +58,7 @@ $ samtools view $bam | head
 A00111:50:H2H5YDMXX:1:1248:13160:2957	16	chr1	138063420	255	1S89M	*	0	0	TTAATAGTTGAAAGTTTATTATGGTTATCAATATTATATCTCAGTAAGAGTAAACAAAACAGTGGGGAAATTCAAGATAAATACACAGTA	F-8FFFFFFFF8FF8FFFFFFFFFFF-FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF-FFF	NH:i:1	HI:i:1	AS:i:87	nM:i:0	TX:Z:NM_001111316,+5016,89M1S;NM_011210,+4599,89M1S	GX:Z:Ptprc	GN:Z:Ptprc	RE:A:E	CR:Z:AGTTATGTCTCTCGTA	CY:Z:F888-FFFFFF8FFFF	UR:Z:AGGAGGTCTT	UY:Z:F88FFFFFFF	UB:Z:AGGAGGTCTT	BC:Z:CAGTACTG	QT:Z:FFFFFFFF	RG:Z:10X_P7_8:MissingLibrary:1:H2H5YDMXX:1
 ```
 
-After processing with `bam2fasta` and specifying a label for the cell, `lung_epithelial_cell`, this is the resulting FASTA file content:
+After processing with `bam2fasta` using `--rename-10x-barcodes` flag read name contains the label`lung_epithelial_cell`, CB, and the UMI, this is the resulting FASTA file content:
 
 ```
 >lung_epithelial_cell|AAATGCCCAAACTGCT-1_GTCATCGCTA_000
@@ -85,7 +85,8 @@ We implemented a method to find unique barcodes based on the temporary `.fasta` 
 ### MapReduce: Reduce
 
 In the "Reduce" step, we combine all sequences for the same barcode. We accomplish this by concatenating strings of temporary FASTA file names for the same barcode, hence its memory consumption is less than it would be if appending to a Python `list` structure.
-These temporary `.fasta` files are iteratively split and then combined to one `.fasta` file per barcode by concatenating all the sequences obtained from different `.fasta` files, separated by a user-specified delimiter, by default `X` as it is not present in common biological alphabets such as DNA or protein alphabets.
+These temporary `.fasta` files are iteratively split and then combined to one `.fasta` file per barcode by concatenating all the sequences obtained from different `.fasta` files, separated by a user-specified delimiter. 
+The default delimiter is `X` as it is not present in common biological alphabets such as DNA or protein alphabets.
 For each of the cell barcodes, if their number of UMIs passes the threshold given in flag `--min-umi-per-barcode`, they are considered a "valid" cell barcode.
 Using Python's `multiprocessing`, each cellular barcode's FASTAs containing different UMIs are combined into a fasta file with the cellular barcode and the concatenated read sequence, separated by the delimiter `X`, is written to a `.fasta` file.
 
@@ -113,7 +114,7 @@ Documentation can be found at https://github.com/czbiohub/bam2fasta/
 
 # Glossary
 
-"Sharding," "splitting," "tiling" are synonymously used terms to represent looking at a subset of a complete dataset.
+"Sharding," "splitting," "tiling" are synonymously used terms to represent partitioning a complete dataset into smaller subsets.
 When the dataset is images, the commonly used term for image rendering world is "tiling."
 In computer science, the most common term to explain the phenomenon for any dataset is "sharding."
 "Sharding" here is used to enable analyzing a large `.bam` file simultaneously on multiple processes.
