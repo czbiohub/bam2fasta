@@ -4,7 +4,6 @@
 
 import os
 from collections import defaultdict
-import tempfile
 import logging
 import time
 from tqdm import tqdm
@@ -109,7 +108,8 @@ def read_bam_file(bam_path):
 
 
 def shard_bam_file(bam_file_path, chunked_file_line_count, shards_folder):
-    """Shard QC-pass bam file with the given line count and save to shards_folder
+    """Shard QC-pass bam file with the given line count
+       and save to shards_folder
 
     Parameters
     ----------
@@ -159,7 +159,7 @@ def shard_bam_file(bam_file_path, chunked_file_line_count, shards_folder):
 
 
 def bam_to_temp_fasta(
-        barcodes, barcode_renamer, delimiter, bam_file, temp_folder):
+        barcodes, barcode_renamer, delimiter, temp_folder, bam_file):
     """Convert 10x bam to one-record-per-cell fasta.
 
     Parameters
@@ -215,15 +215,15 @@ def bam_to_temp_fasta(
             alignment.query_alignment_sequence + delimiter
 
     filenames = list(set(write_cell_sequences(
-        cell_sequences, delimiter, temp_folder)))
-    logger.info("bam_to_fasta conversion completed on %s", bam_file)
+        cell_sequences, temp_folder, delimiter)))
+    logger.info("bam_to_temp_fasta conversion completed on %s", bam_file)
 
     bam.close()
 
     return filenames
 
 
-def write_cell_sequences(cell_sequences, delimiter="X", temp_folder=None):
+def write_cell_sequences(cell_sequences, temp_folder, delimiter="X"):
     """
     Write each cell's sequences to an individual file
         Parameters
@@ -246,9 +246,6 @@ def write_cell_sequences(cell_sequences, delimiter="X", temp_folder=None):
     filenames: generator
         one temp fasta filename for one cell/cell_umi with  sequence
     """
-    if temp_folder is None:
-        temp_folder = tempfile.mkdtemp()
-
     for cell, seq in cell_sequences.items():
         barcode, umi = cell.split(delimiter)
         filename = os.path.join(temp_folder, barcode + '.fasta')

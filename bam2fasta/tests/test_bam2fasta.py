@@ -1,9 +1,11 @@
+import os
+import shutil
+
+import screed
+
 from bam2fasta.tests import bam2fasta_tst_utils as utils
 from bam2fasta import cli
 from bam2fasta import VERSION
-
-import os
-import screed
 
 
 def test_iter_split():
@@ -66,13 +68,18 @@ def test_run_bam2fasta_supply_all_args():
         barcodes_path = utils.get_test_data('10x-example/barcodes.tsv')
         renamer_path = utils.get_test_data('10x-example/barcodes_renamer.tsv')
         fastas_dir = os.path.join(location, "fastas")
+        temp_fastas_dir = os.path.join(
+            os.path.dirname(testdata1), "temp_fastas")
         if not os.path.exists(fastas_dir):
             os.makedirs(fastas_dir)
+        if not os.path.exists(temp_fastas_dir):
+            os.makedirs(temp_fastas_dir)
 
         status, out, err = utils.run_shell_cmd(
             'bam2fasta convert --filename ' + testdata1 +
             ' --min-umi-per-barcode 10' +
             ' --write-barcode-meta-csv ' + csv_path +
+            ' --save-temp-fastas ' + temp_fastas_dir +
             ' --barcodes ' + barcodes_path + ' --rename-10x-barcodes ' +
             renamer_path + ' --save-fastas ' + fastas_dir + " --processes 1",
             in_directory=location)
@@ -95,6 +102,7 @@ def test_run_bam2fasta_supply_all_args():
             assert name.startswith('lung_epithelial_cell|AAATGCCCAAACTGCT-1')
             assert sequence.count(">") == 0
             assert sequence.count("X") == 0
+        shutil.rmtree(temp_fastas_dir)
 
 
 def test_run_bam2fasta_default_args():
