@@ -43,7 +43,8 @@ Bam2fasta convert command, it takes BAM and/or barcode files as input. Examples:
 		--write-barcode-meta-csv all_barcodes_meta.csv \
 		--barcodes 10x-example/barcodes.tsv \
 		--rename-10x-barcodes 10x-example/barcodes_renamer.tsv \
-		--line-count 150
+		--line-count 150 \
+    --save-intermediate-files intermediate_files
 
 * [Main arguments](#main-arguments)
     * [`--filename`](#--filename)
@@ -51,6 +52,7 @@ Bam2fasta convert command, it takes BAM and/or barcode files as input. Examples:
         * [`--barcodes-file`](#--barcodes-file)
         * [`--rename-10x-barcodes`](#--rename-10x-barcodes)
         * [`--save-fastas`](#--save-fastas)
+        * [`--save-intermediate-files`](#--save-intermediate-files)
         * [`--min-umi-per-barcode`](#--min-umi-per-barcode)
         * [`--write-barcode-meta-csv`](#--write-barcode-meta-csv)
         * [`--line-count`](#--line-count)
@@ -94,6 +96,16 @@ If left unspecified, barcodes in bam as given in barcodes_file are not renamed.
 
 * Default: Save fastas in current working directory:
   * `--save-fastas "fastas"`
+
+### `--save_intermediate_files`
+
+1. The [save_intermediate_files](#--save-intermediate-files ) used to save the intermediate sharded bams and their corresponding fastas. By default, they are saved inside "/tmp/" and are deleted automatically at the end of the program. Otherwise absolute path given in save_intermediate_files. 
+
+
+**Example parameters**
+
+* Default: Save temporary fastas and bam in `/tmp/` directory:
+  * `--save-intermediate-files "fastas"`
 
 
 ### `--write_barcode_meta_csv`

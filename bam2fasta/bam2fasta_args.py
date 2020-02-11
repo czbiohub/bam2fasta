@@ -47,13 +47,15 @@ def create_parser():
         'in the absolute path given by this flag'
         'By default, fastas are saved in current directory')
     parser.add_argument(
-        '--save-temp-fastas', default="/tmp/", type=str,
-        help='save temporary fastas for chunks of bam files'
+        '--save-intermediate-files', default="/tmp/", type=str,
+        help='save temporary fastas and chunks of bam files'
         'in the absolute path given by this flag'
-        'By default, fastas are saved in temp directory. This might cause'
+        'By default, they are saved in temp directory.'
+        'An important note is This might cause'
         'not enough space on the device left depending on the size of your'
         'bam file and harddisk space allocated for tmp folder on your machine,'
-        'so its better to specify a directory')
+        'so its better to specify a directory.'
+        'These files are deleted automatically at the end of the program')
     parser.add_argument(
         '--line-count', type=int,
         help='Line/Alignment count for each bam shard',
