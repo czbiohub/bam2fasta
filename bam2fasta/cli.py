@@ -11,12 +11,10 @@ from collections import defaultdict, OrderedDict
 from functools import partial
 
 import screed
-import numpy as np
 from pathos import multiprocessing
 
 from bam2fasta import tenx_utils
 from bam2fasta.bam2fasta_args import create_parser, Bam2FastaArgumentParser
-from bam2fasta import np_utils
 
 
 logger = logging.getLogger(__name__)
@@ -255,11 +253,10 @@ def convert(args):
     # Shard bam file to smaller bam file
     logger.info('... reading bam file from %s', args.filename)
     n_jobs = args.processes
-    filenames, mmap_file = np_utils.to_memmap(np.array(
-        tenx_utils.shard_bam_file(
-            args.filename,
-            args.line_count,
-            args.save_intermediate_files)))
+    filenames = tenx_utils.shard_bam_file(
+        args.filename,
+        args.line_count,
+        args.save_intermediate_files)
 
     # Create a per-cell fasta generator of sequences
     # If the reads should be filtered by barcodes and umis
@@ -292,7 +289,6 @@ def convert(args):
     # clean up the memmap and sharded intermediary bam files
     [os.unlink(file) for file in filenames if os.path.exists(file)]
     del filenames
-    os.unlink(mmap_file)
     logger.info("Deleted intermediary bam and memmap files")
 
     all_fastas_sorted = get_unique_barcodes(all_fastas)
