@@ -289,7 +289,7 @@ def convert(args):
     # clean up the memmap and sharded intermediary bam files
     [os.unlink(file) for file in filenames if os.path.exists(file)]
     del filenames
-    logger.info("Deleted intermediary bam and memmap files")
+    logger.info("Deleted intermediary bam")
 
     all_fastas_sorted = get_unique_barcodes(all_fastas)
     unique_barcodes = len(all_fastas_sorted)
