@@ -9,6 +9,7 @@ import logging
 import time
 from collections import defaultdict, OrderedDict
 from functools import partial
+from sys import getsizeof
 
 import screed
 from pathos import multiprocessing
@@ -95,22 +96,23 @@ def convert(args):
     logger.info(args)
 
     umi_filter = True if args.min_umi_per_barcode != 0 else False
-    all_fastas_sorted = []
     all_fastas = ""
+    all_fastas_colon_separated = ""
 
-    def collect_reduce_temp_fastas(index):
+    def collect_reduce_temp_fastas(fasta_name):
         """Convert fasta to sig record"""
         if umi_filter:
-            return filtered_umi_to_fasta(index)
+            return filtered_umi_to_fasta(fasta_name)
         else:
-            return unfiltered_umi_to_fasta(index)
+            return unfiltered_umi_to_fasta(fasta_name)
 
-    def unfiltered_umi_to_fasta(index):
+    def unfiltered_umi_to_fasta(fasta_name):
         """Returns signature records across fasta files for a unique barcode"""
 
         # Getting all fastas for a given barcode
         # from different shards
-        single_barcode_fastas = all_fastas_sorted[index]
+        logger.info("fasta_name LOOK {}".format(fasta_name))
+        single_barcode_fastas = fasta_name
         count = 0
         # Iterating through fasta files for single barcode from different
         # fastas
@@ -148,13 +150,13 @@ def convert(args):
 
         return os.path.join(args.save_fastas, unique_fasta_file)
 
-    def filtered_umi_to_fasta(index):
+    def filtered_umi_to_fasta(fasta_name):
         """Returns signature records for all the fasta files for a unique
         barcode, only if it has more than min_umi_per_barcode number of umis"""
 
         # Getting all fastas for a given barcode
         # from different shards
-        single_barcode_fastas = all_fastas_sorted[index]
+        single_barcode_fastas = fasta_name
 
         logger.debug("calculating umi counts")
         # Tracking UMI Counts
@@ -300,9 +302,19 @@ def convert(args):
     logger.info("Pooled %d and chunksize %d mapped",
                 n_jobs, chunksize)
 
+    unique_barcode_size = getsizeof(unique_barcodes)
+    all_fastas_sorted_size = getsizeof(all_fastas_sorted)
+    all_fastas_colon_separated = \
+        ";" .join(itertools.chain(all_fastas_sorted))
+    all_fastas_sorted_size = getsizeof(all_fastas_sorted)
+    del all_fastas_sorted
+    all_fastas_colon_separated_size = getsizeof(all_fastas_colon_separated)
+    logger.info("variable sizes {}, {}, {} in bytes".format(
+        unique_barcode_size,
+        all_fastas_sorted_size, all_fastas_colon_separated_size))
     fastas = list(pool.imap(
-        lambda index: collect_reduce_temp_fastas(index),
-        range(unique_barcodes),
+        lambda fasta_name: collect_reduce_temp_fastas(fasta_name),
+        iter_split(all_fastas_colon_separated, ";"),
         chunksize=chunksize))
 
     if args.write_barcode_meta_csv:
