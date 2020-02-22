@@ -7,12 +7,12 @@ import os
 import glob
 import logging
 import time
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict
 from functools import partial
-from sys import getsizeof
 
 import screed
 from pathos import multiprocessing
+from tqdm import tqdm
 
 from bam2fasta import tenx_utils
 from bam2fasta.bam2fasta_args import create_parser, Bam2FastaArgumentParser
@@ -24,23 +24,6 @@ DELIMITER = "X"
 CELL_BARCODE = "CELL_BARCODE"
 UMI_COUNT = "UMI_COUNT"
 READ_COUNT = "READ_COUNT"
-
-
-def iter_split(string, sep=None):
-    """
-    Return a generator of strings after
-    splitting a string by the given separator
-
-    sep : str
-        Separator between strings, default None
-    Returns
-    -------
-    Yields generator of strings after
-    splitting a string by the given separator
-    """
-    sep = sep or ' '
-    groups = itertools.groupby(string, lambda s: s != sep)
-    return (''.join(g) for k, g in groups if k)
 
 
 def calculate_chunksize(total_jobs_todo, processes):
@@ -59,6 +42,22 @@ def calculate_chunksize(total_jobs_todo, processes):
     if extra:
         chunksize += 1
     return chunksize
+
+
+def divide_chunks(l, n):
+    """
+    Yield successive n-sized chunks from l.
+
+    l : list
+        Separator between strings, default one space
+    n: chunk size
+    Returns
+    -------
+    Yields generator of n sized chunk
+    """
+    # looping till length l
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
 
 
 def info(args):
@@ -95,120 +94,6 @@ def convert(args):
 
     logger.info(args)
 
-    umi_filter = True if args.min_umi_per_barcode != 0 else False
-    all_fastas = ""
-    all_fastas_colon_separated = ""
-
-    def collect_reduce_temp_fastas(fasta_name):
-        """Convert fasta to sig record"""
-        if umi_filter:
-            return filtered_umi_to_fasta(fasta_name)
-        else:
-            return unfiltered_umi_to_fasta(fasta_name)
-
-    def unfiltered_umi_to_fasta(fasta_name):
-        """Returns signature records across fasta files for a unique barcode"""
-
-        # Getting all fastas for a given barcode
-        # from different shards
-        logger.info("fasta_name LOOK {}".format(fasta_name))
-        single_barcode_fastas = fasta_name
-        count = 0
-        # Iterating through fasta files for single barcode from different
-        # fastas
-        for fasta in iter_split(single_barcode_fastas, ","):
-
-            # Initializing the fasta file to write
-            # all the sequences from all bam shards to
-            if count == 0:
-                unique_fasta_file = os.path.basename(fasta)
-                barcode_name = unique_fasta_file.replace(".fasta", "")
-                f = open(os.path.join(
-                    args.save_fastas, unique_fasta_file), "w")
-
-            # Add sequence
-            for record in screed.open(fasta):
-                sequence = record.sequence
-                umi = record.name
-
-                split_seqs = sequence.split(args.delimiter)
-                for index, seq in enumerate(split_seqs):
-                    if seq == "":
-                        continue
-                    f.write(">{}\n{}\n".format(
-                        barcode_name + "_" + umi + "_" + '{:03d}'.format(
-                            index), seq))
-
-            # Delete fasta file in tmp folder
-            if os.path.exists(fasta):
-                os.unlink(fasta)
-
-            count += 1
-
-        # close the fasta file
-        f.close()
-
-        return os.path.join(args.save_fastas, unique_fasta_file)
-
-    def filtered_umi_to_fasta(fasta_name):
-        """Returns signature records for all the fasta files for a unique
-        barcode, only if it has more than min_umi_per_barcode number of umis"""
-
-        # Getting all fastas for a given barcode
-        # from different shards
-        single_barcode_fastas = fasta_name
-
-        logger.debug("calculating umi counts")
-        # Tracking UMI Counts
-        umis = defaultdict(int)
-        # Iterating through fasta files for single barcode from different
-        # fastas
-        for fasta in iter_split(single_barcode_fastas, ","):
-            # calculate unique umi, sequence counts
-            for record in screed.open(fasta):
-                umis[record.name] += record.sequence.count(args.delimiter)
-
-        if args.write_barcode_meta_csv:
-            unique_fasta_file = os.path.basename(fasta)
-            unique_meta_file = unique_fasta_file.replace(".fasta", "_meta.txt")
-            with open(unique_meta_file, "w") as f:
-                f.write("{} {}".format(len(umis), sum(list(umis.values()))))
-
-        logger.debug("Completed tracking umi counts")
-        if len(umis) < args.min_umi_per_barcode:
-            return []
-        count = 0
-        for fasta in iter_split(single_barcode_fastas, ","):
-
-            # Initializing fasta file to save the sequence to
-            if count == 0:
-                unique_fasta_file = os.path.basename(fasta)
-                barcode_name = unique_fasta_file.replace(".fasta", "")
-                f = open(
-                    os.path.join(args.save_fastas, unique_fasta_file), "w")
-
-            # Add sequences of barcodes with more than min-umi-per-barcode umis
-            for record in screed.open(fasta):
-                sequence = record.sequence
-                umi = record.name
-
-                # Appending sequence of a umi to the fasta
-                split_seqs = sequence.split(args.delimiter)
-                for index, seq in enumerate(split_seqs):
-                    if seq == "":
-                        continue
-                    f.write(">{}\n{}\n".format(
-                        barcode_name + "_" + umi + "_" + '{:03d}'.format(
-                            index), seq))
-            # Delete fasta file in tmp folder
-            if os.path.exists(fasta):
-                os.unlink(fasta)
-            count += 1
-
-        # close the opened fasta file
-        f.close()
-        return os.path.join(args.save_fastas, unique_fasta_file)
-
     def write_to_barcode_meta_csv():
         """ Merge all the meta text files for each barcode to
         one csv file with CELL_BARCODE, UMI_COUNT,READ_COUNT"""
@@ -233,7 +118,7 @@ def convert(args):
         """ Build a dictionary with each unique barcode as key and
         their fasta files from different shards """
         fasta_files_dict = OrderedDict()
-        for fasta in iter_split(all_fastas, ","):
+        for fasta in tenx_utils.iter_split(all_fastas, ","):
             barcode = os.path.basename(fasta).replace(".fasta", "")
             value = fasta_files_dict.get(barcode, "")
             fasta_files_dict[barcode] = value + fasta + ","
@@ -298,31 +183,38 @@ def convert(args):
     logger.info("Found %d unique barcodes", unique_barcodes)
     # Cleaning up to retrieve memory from unused large variables
     del all_fastas
-    chunksize = calculate_chunksize(unique_barcodes, n_jobs)
-    logger.info("Pooled %d and chunksize %d mapped",
-                n_jobs, chunksize)
+    umi_filter = True if args.min_umi_per_barcode != 0 else False
+    if umi_filter:
+        tenx_func = tenx_utils.filtered_umi_to_fasta
+    else:
+        tenx_func = tenx_utils.unfiltered_umi_to_fasta
 
-    unique_barcode_size = getsizeof(unique_barcodes)
-    all_fastas_sorted_size = getsizeof(all_fastas_sorted)
-    all_fastas_colon_separated = \
-        ";" .join(itertools.chain(all_fastas_sorted))
-    all_fastas_sorted_size = getsizeof(all_fastas_sorted)
-    del all_fastas_sorted
-    all_fastas_colon_separated_size = getsizeof(all_fastas_colon_separated)
-    logger.info("variable sizes {}, {}, {} in bytes".format(
-        unique_barcode_size,
-        all_fastas_sorted_size, all_fastas_colon_separated_size))
-    fastas = list(pool.imap(
-        lambda fasta_name: collect_reduce_temp_fastas(fasta_name),
-        iter_split(all_fastas_colon_separated, ";"),
-        chunksize=chunksize))
+    for chunked_list in tqdm(divide_chunks(all_fastas_sorted, n_jobs)):
+        chunked_list_length = len(chunked_list)
+        chunksize = calculate_chunksize(chunked_list_length, n_jobs)
+        logger.info(
+            "Pooled %d and chunksize %d mapped for %d subset of barcodes",
+            n_jobs, chunksize, chunked_list_length)
+
+        func = partial(
+            tenx_func,
+            chunked_list,
+            args.save_fastas,
+            args.delimiter,
+            args.write_barcode_meta_csv,
+            args.min_umi_per_barcode)
+
+        fastas = list(
+            pool.imap(
+                lambda index: func(index), range(chunked_list_length),
+                chunksize=chunksize))
+        fastas = [fasta for fasta in fastas if fasta != []]
 
     if args.write_barcode_meta_csv:
         write_to_barcode_meta_csv()
     logger.info(
         "time taken to convert fastas for 10x folder is %.5f seconds",
         time.time() - startt)
-    fastas = [fasta for fasta in fastas if fasta != []]
 
     pool.close()
     pool.join()

@@ -3,11 +3,13 @@
 """
 
 import logging
+import itertools
 import os
 from collections import defaultdict
 import tempfile
 import time
 
+import screed
 from tqdm import tqdm
 import numpy as np
 
@@ -15,6 +17,23 @@ CELL_BARCODES = ['CB', 'XC']
 UMIS = ['UB', 'XM']
 
 logger = logging.getLogger(__name__)
+
+
+def iter_split(string, sep=None):
+    """
+    Return a generator of strings after
+    splitting a string by the given separator
+
+    sep : str
+        Separator between strings, default None
+    Returns
+    -------
+    Yields generator of strings after
+    splitting a string by the given separator
+    """
+    sep = sep or ' '
+    groups = itertools.groupby(string, lambda s: s != sep)
+    return (''.join(g) for k, g in groups if k)
 
 
 def pass_alignment_qc(alignment, barcodes):
@@ -221,6 +240,7 @@ def bam_to_temp_fasta(
     logger.info("bam_to_temp_fasta conversion completed on %s", bam_file)
 
     bam.close()
+    logger.info("number of temporary files is %s", len(filenames))
 
     return filenames
 
@@ -257,3 +277,112 @@ def write_cell_sequences(cell_sequences, temp_folder, delimiter="X"):
         with open(filename, "a") as f:
             f.write(">{}\n{}\n".format(umi, seq))
         yield filename
+
+
+def unfiltered_umi_to_fasta(
+        all_fastas_sorted, save_fastas, delimiter,
+        write_barcode_meta_csv, min_umi_per_barcode, index):
+    """Returns signature records across fasta files for a unique barcode"""
+
+    # Getting all fastas for a given barcode
+    # from different shards
+    single_barcode_fastas = all_fastas_sorted[index]
+    count = 0
+    # Iterating through fasta files for single barcode from different
+    # fastas
+    for fasta in iter_split(single_barcode_fastas, ","):
+
+        # Initializing the fasta file to write
+        # all the sequences from all bam shards to
+        if count == 0:
+            unique_fasta_file = os.path.basename(fasta)
+            barcode_name = unique_fasta_file.replace(".fasta", "")
+            f = open(os.path.join(
+                save_fastas, unique_fasta_file), "w")
+
+        # Add sequence
+        for record in screed.open(fasta):
+            sequence = record.sequence
+            umi = record.name
+
+            split_seqs = sequence.split(delimiter)
+            for index, seq in enumerate(split_seqs):
+                if seq == "":
+                    continue
+                f.write(">{}\n{}\n".format(
+                    barcode_name + "_" + umi + "_" + '{:03d}'.format(
+                        index), seq))
+
+        # Delete fasta file in tmp folder
+        if os.path.exists(fasta):
+            os.unlink(fasta)
+
+        count += 1
+
+    # close the fasta file
+    f.close()
+
+    return os.path.join(save_fastas, unique_fasta_file)
+
+
+def filtered_umi_to_fasta(
+        all_fastas_sorted, save_fastas, delimiter,
+        write_barcode_meta_csv, min_umi_per_barcode,
+        index):
+    """Returns signature records for all the fasta files for a unique
+    barcode, only if it has more than min_umi_per_barcode number of umis"""
+
+    # Getting all fastas for a given barcode
+    # from different shards
+    single_barcode_fastas = all_fastas_sorted[index]
+
+    logger.debug("calculating umi counts")
+    # Tracking UMI Counts
+    umis = defaultdict(int)
+    # Iterating through fasta files for single barcode from different
+    # fastas
+    for fasta in iter_split(single_barcode_fastas, ","):
+        # calculate unique umi, sequence counts
+        for record in screed.open(fasta):
+            umis[record.name] += record.sequence.count(delimiter)
+
+    if write_barcode_meta_csv:
+        unique_fasta_file = os.path.basename(fasta)
+        unique_meta_file = unique_fasta_file.replace(".fasta", "_meta.txt")
+        with open(unique_meta_file, "w") as f:
+            f.write("{} {}".format(len(umis), sum(list(umis.values()))))
+
+    logger.debug("Completed tracking umi counts")
+    if len(umis) < min_umi_per_barcode:
+        return []
+    count = 0
+    for fasta in iter_split(single_barcode_fastas, ","):
+
+        # Initializing fasta file to save the sequence to
+        if count == 0:
+            unique_fasta_file = os.path.basename(fasta)
+            barcode_name = unique_fasta_file.replace(".fasta", "")
+            f = open(
+                os.path.join(save_fastas, unique_fasta_file), "w")
+
+        # Add sequences of barcodes with more than min-umi-per-barcode umis
+        for record in screed.open(fasta):
+            sequence = record.sequence
+            umi = record.name
+
+            # Appending sequence of a umi to the fasta
+            split_seqs = sequence.split(delimiter)
+            for index, seq in enumerate(split_seqs):
+                if seq == "":
+                    continue
+                f.write(">{}\n{}\n".format(
+                    barcode_name + "_" + umi + "_" + '{:03d}'.format(
+                        index), seq))
+        # Delete fasta file in tmp folder
+        if os.path.exists(fasta):
+            os.unlink(fasta)
+        count += 1
+
+    # close the opened fasta file
+    f.close()
+    return os.path.join(save_fastas, unique_fasta_file)
