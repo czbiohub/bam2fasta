@@ -190,9 +190,7 @@ def convert(args):
         args.write_barcode_meta_csv,
         args.min_umi_per_barcode)
 
-    pool.imap(
-        lambda pool_list: func(pool_list),
-        pool_lists, chunksize=chunksize)
+    pool.imap(lambda pool_list: func(pool_list), pool_lists)
 
     pool.close()
     pool.join()
