@@ -8,25 +8,6 @@ from bam2fasta import cli
 from bam2fasta import VERSION
 
 
-def test_iter_split():
-    expected = ['1', '2', '3']
-    input_string = '1,2,3,'
-    obtained = list(cli.iter_split(input_string, ","))
-    assert expected == obtained
-
-    obtained = list(cli.iter_split(input_string, None))
-    assert [input_string] == obtained
-
-    input_string = \
-        '/path/path2/1.fasta /path/path2/2.fasta /path/path2/3.fasta'
-    obtained = list(cli.iter_split(input_string, None))
-    expected = [
-        '/path/path2/1.fasta',
-        '/path/path2/2.fasta',
-        '/path/path2/3.fasta']
-    assert expected == obtained
-
-
 def test_bam2fasta_info():
     status, out, err = utils.run_shell_cmd('bam2fasta info')
 
@@ -87,6 +68,7 @@ def test_run_bam2fasta_supply_all_args():
         assert status == 0
         with open(csv_path, 'rb') as f:
             data = [line.split() for line in f]
+        print(data)
         assert len(data) == 9
         fasta_files = os.listdir(fastas_dir)
         barcodes = [filename.replace(".fasta", "") for filename in fasta_files]

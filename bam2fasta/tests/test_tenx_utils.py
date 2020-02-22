@@ -6,6 +6,25 @@ import bam2fasta.tenx_utils as tenx
 from bam2fasta.tests import bam2fasta_tst_utils as utils
 
 
+def test_iter_split():
+    expected = ['1', '2', '3']
+    input_string = '1,2,3,'
+    obtained = list(tenx.iter_split(input_string, ","))
+    assert expected == obtained
+
+    obtained = list(tenx.iter_split(input_string, None))
+    assert [input_string] == obtained
+
+    input_string = \
+        '/path/path2/1.fasta /path/path2/2.fasta /path/path2/3.fasta'
+    obtained = list(tenx.iter_split(input_string, None))
+    expected = [
+        '/path/path2/1.fasta',
+        '/path/path2/2.fasta',
+        '/path/path2/3.fasta']
+    assert expected == obtained
+
+
 def test_read_barcodes_file():
     filename = utils.get_test_data('10x-example/barcodes.tsv')
     barcodes = tenx.read_barcodes_file(filename)

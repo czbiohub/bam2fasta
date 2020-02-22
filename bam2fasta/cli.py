@@ -12,7 +12,6 @@ from functools import partial
 
 import screed
 from pathos import multiprocessing
-from tqdm import tqdm
 
 from bam2fasta import tenx_utils
 from bam2fasta.bam2fasta_args import create_parser, Bam2FastaArgumentParser
@@ -42,22 +41,6 @@ def calculate_chunksize(total_jobs_todo, processes):
     if extra:
         chunksize += 1
     return chunksize
-
-
-def divide_chunks(l, n):
-    """
-    Yield successive n-sized chunks from l.
-
-    l : list
-        Separator between strings, default one space
-    n: chunk size
-    Returns
-    -------
-    Yields generator of n sized chunk
-    """
-    # looping till length l
-    for i in range(0, len(l), n):
-        yield l[i:i + n]
 
 
 def info(args):
@@ -113,6 +96,7 @@ def convert(args):
                     fp.write("{},{},{}\n".format(barcode_name,
                                                  umi_count,
                                                  read_count))
+                os.unlink(barcode_meta_txt)
 
     def get_unique_barcodes(all_fastas):
         """ Build a dictionary with each unique barcode as key and
@@ -124,6 +108,7 @@ def convert(args):
             fasta_files_dict[barcode] = value + fasta + ","
         # Find unique barcodes
         all_fastas_sorted = list(fasta_files_dict.values())
+        all_fastas_sorted.sort()
         del fasta_files_dict
         return all_fastas_sorted
 
@@ -189,33 +174,33 @@ def convert(args):
     else:
         tenx_func = tenx_utils.unfiltered_umi_to_fasta
 
-    for chunked_list in tqdm(divide_chunks(all_fastas_sorted, n_jobs)):
-        chunked_list_length = len(chunked_list)
-        chunksize = calculate_chunksize(chunked_list_length, n_jobs)
-        logger.info(
-            "Pooled %d and chunksize %d mapped for %d subset of barcodes",
-            n_jobs, chunksize, chunked_list_length)
+    chunksize = calculate_chunksize(unique_barcodes, n_jobs)
+    pool_lists = []
+    for i in range(0, unique_barcodes, chunksize):
+        pool_lists.append(all_fastas_sorted[i: i + chunksize])
 
-        func = partial(
-            tenx_func,
-            chunked_list,
-            args.save_fastas,
-            args.delimiter,
-            args.write_barcode_meta_csv,
-            args.min_umi_per_barcode)
+    logger.info(
+        "Pooled %d and chunksize %d mapped for %d lists",
+        n_jobs, chunksize, len(pool_lists))
 
-        fastas = list(
-            pool.imap(
-                lambda index: func(index), range(chunked_list_length),
-                chunksize=chunksize))
-        fastas = [fasta for fasta in fastas if fasta != []]
+    func = partial(
+        tenx_func,
+        args.save_fastas,
+        args.delimiter,
+        args.write_barcode_meta_csv,
+        args.min_umi_per_barcode)
+
+    pool.imap(
+        lambda pool_list: func(pool_list),
+        pool_lists, chunksize=chunksize)
+
+    pool.close()
+    pool.join()
+    fastas = glob.glob(os.path.join(args.save_fastas, "*_bam2fasta.fasta"))
 
     if args.write_barcode_meta_csv:
         write_to_barcode_meta_csv()
     logger.info(
         "time taken to convert fastas for 10x folder is %.5f seconds",
         time.time() - startt)
-
-    pool.close()
-    pool.join()
     return fastas
