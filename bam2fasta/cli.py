@@ -77,6 +77,9 @@ def convert(args):
 
     logger.info(args)
 
+    if not os.path.exists(args.save_fastas) and args.save_fastas != "":
+        os.makedirs(args.save_fastas)
+
     def write_to_barcode_meta_csv():
         """ Merge all the meta text files for each barcode to
         one csv file with CELL_BARCODE, UMI_COUNT,READ_COUNT"""

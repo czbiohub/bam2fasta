@@ -88,7 +88,7 @@ def parse_barcode_renamer(barcodes, barcode_renamer):
             for line in f.readlines():
                 barcode, renamed = line.split()
                 assert barcode in barcodes
-                renamer[barcode] = renamed
+                renamer[barcode] = renamed.replace("|", "_")
     else:
         renamer = dict(zip(barcodes, barcodes))
     return renamer
@@ -285,7 +285,7 @@ def unfiltered_umi_to_fasta(
         write_barcode_meta_csv, min_umi_per_barcode,
         single_barcode_fastas):
     """Returns signature records across fasta files for a unique barcode"""
-
+    startt = time.time()
     # Getting all fastas for a given barcode
     # from different shards
     count = 0
@@ -322,6 +322,9 @@ def unfiltered_umi_to_fasta(
 
     # close the fasta file
     f.close()
+    logger.info(
+        "time taken to write a fasta file is is %.5f seconds",
+        time.time() - startt)
 
 
 def filtered_umi_to_fasta(
@@ -333,8 +336,8 @@ def filtered_umi_to_fasta(
 
     # Getting all fastas for a given barcode from different shards
     logger.info(
-        "calculating umi counts for single_barcode_fastas {}".format(
-            single_barcode_fastas))
+        "calculating umi counts for single_barcode_fastas")
+    startt = time.time()
     # Tracking UMI Counts
     umis = defaultdict(int)
     # Iterating through fasta files for single barcode from different
@@ -363,6 +366,7 @@ def filtered_umi_to_fasta(
                     os.path.join(
                         save_fastas,
                         barcode_name + "_bam2fasta.fasta"), "w")
+                logger.info("writing to file named {}".format(f.name))
 
             # Add sequences of barcodes with
             # more than min-umi-per-barcode umis
@@ -385,3 +389,6 @@ def filtered_umi_to_fasta(
 
         # close the opened fasta file
         f.close()
+    logger.info(
+        "time taken to write a fasta file is is %.5f seconds",
+        time.time() - startt)
