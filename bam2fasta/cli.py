@@ -175,13 +175,10 @@ def convert(args):
         tenx_func = tenx_utils.unfiltered_umi_to_fasta
 
     chunksize = calculate_chunksize(unique_barcodes, n_jobs)
-    pool_lists = []
-    for i in range(0, unique_barcodes, chunksize):
-        pool_lists.append(all_fastas_sorted[i: i + chunksize])
 
     logger.info(
         "Pooled %d and chunksize %d mapped for %d lists",
-        n_jobs, chunksize, len(pool_lists))
+        n_jobs, chunksize, len(all_fastas_sorted))
 
     func = partial(
         tenx_func,
@@ -190,7 +187,8 @@ def convert(args):
         args.write_barcode_meta_csv,
         args.min_umi_per_barcode)
 
-    pool.imap(lambda pool_list: func(pool_list), pool_lists)
+    pool.imap(
+        lambda fasta: func(fasta), all_fastas_sorted, chunksize=chunksize)
 
     pool.close()
     pool.join()
