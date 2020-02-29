@@ -208,11 +208,10 @@ def test_filtered_umi_to_fasta():
             "," .join(itertools.chain(single_barcode_fastas)))
         fastas = glob.glob(
             os.path.join(location, "*_bam2fasta.fasta"))
+        assert len(fastas) == 1
         meta_txts = glob.glob(
             os.path.join(os.getcwd(), "*_meta.txt"))
-
-        assert len(meta_txts) == 4
+        assert len(meta_txts) == 1
         for meta_txt in meta_txts:
             if os.path.exists(meta_txt):
                 os.unlink(meta_txt)
-        assert len(fastas) == 0
