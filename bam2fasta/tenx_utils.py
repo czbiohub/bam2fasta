@@ -370,9 +370,9 @@ def filtered_umi_to_fasta(
             os.unlink(fasta)
 
     # Write umi count, read count per barcode into a metadata file
+    unique_fasta_file = os.path.basename(fasta)
     umi_count = len(umis)
     if write_barcode_meta_csv:
-        unique_fasta_file = os.path.basename(fasta)
         unique_meta_file = unique_fasta_file.replace(".fasta", "_meta.txt")
         with open(unique_meta_file, "w") as ff:
             ff.write("{} {}".format(umi_count, read_count))
