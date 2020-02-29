@@ -58,7 +58,9 @@ def create_parser():
         'These files are deleted automatically at the end of the program')
     parser.add_argument(
         '--line-count', type=int,
-        help='Line/Alignment count for each bam shard',
+        help='Line/Alignment count for each bam shard, higher the count lesser'
+        'the number of temporary bam files and shards created, increase the'
+        'default number according to the size of the bam file',
         default=DEFAULT_LINE_COUNT)
     parser.add_argument(
         '--rename-10x-barcodes', type=str,

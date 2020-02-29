@@ -1,7 +1,6 @@
 """
 Cli tool to convert 10x bam to fastas
 """
-
 import itertools
 import os
 import glob
@@ -173,9 +172,17 @@ def convert(args):
     del all_fastas
     umi_filter = True if args.min_umi_per_barcode != 0 else False
     if umi_filter:
-        tenx_func = tenx_utils.filtered_umi_to_fasta
+        func = partial(
+            tenx_utils.filtered_umi_to_fasta,
+            args.save_fastas,
+            args.delimiter,
+            args.write_barcode_meta_csv,
+            args.min_umi_per_barcode)
     else:
-        tenx_func = tenx_utils.unfiltered_umi_to_fasta
+        func = partial(
+            tenx_utils.unfiltered_umi_to_fasta,
+            args.save_fastas,
+            args.delimiter)
 
     chunksize = calculate_chunksize(unique_barcodes, n_jobs)
 
@@ -183,15 +190,8 @@ def convert(args):
         "Pooled %d and chunksize %d mapped for %d lists",
         n_jobs, chunksize, len(all_fastas_sorted))
 
-    func = partial(
-        tenx_func,
-        args.save_fastas,
-        args.delimiter,
-        args.write_barcode_meta_csv,
-        args.min_umi_per_barcode)
-
-    pool.imap(
-        lambda fasta: func(fasta), all_fastas_sorted, chunksize=chunksize)
+    list(pool.imap(
+        lambda fasta: func(fasta), all_fastas_sorted, chunksize=chunksize))
 
     pool.close()
     pool.join()
@@ -200,6 +200,7 @@ def convert(args):
     if args.write_barcode_meta_csv:
         write_to_barcode_meta_csv()
     logger.info(
-        "time taken to convert fastas for 10x folder is %.5f seconds",
-        time.time() - startt)
+        "time taken to write %d fastas is %.5f seconds",
+        len(fastas), time.time() - startt)
+
     return fastas

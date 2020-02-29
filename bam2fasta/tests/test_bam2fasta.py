@@ -101,7 +101,10 @@ def test_run_bam2fasta_default_args():
 
         assert status == 0
         fasta_files = os.listdir(fastas_dir)
-        barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
+        barcodes = [
+            filename.replace(".fasta", "") for
+            filename in fasta_files if filename.endswith("_bam2fasta.fasta")]
+        print(barcodes)
         assert len(barcodes) == 8
 
 

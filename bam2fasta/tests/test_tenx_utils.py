@@ -1,3 +1,6 @@
+import glob
+import itertools
+import os
 import tempfile
 
 import pysam as bs
@@ -168,3 +171,48 @@ def test_write_sequences_umi():
     assert len(fastas) == len(cell_sequences)
     for fasta in fastas:
         assert fasta.endswith(".fasta")
+
+
+def test_unfiltered_umi_to_fasta():
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    with utils.TempDirectory() as location:
+        single_barcode_fastas = tenx.bam_to_temp_fasta(
+            barcodes=None,
+            barcode_renamer=None,
+            delimiter="X",
+            bam_file=bam_file,
+            temp_folder=location)
+        tenx.unfiltered_umi_to_fasta(
+            location,
+            "X",
+            "," .join(itertools.chain(single_barcode_fastas)))
+        fastas = glob.glob(
+            os.path.join(location, "*_bam2fasta.fasta"))
+        assert len(fastas) == 1
+
+
+def test_filtered_umi_to_fasta():
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    with utils.TempDirectory() as location:
+        single_barcode_fastas = tenx.bam_to_temp_fasta(
+            barcodes=None,
+            barcode_renamer=None,
+            delimiter="X",
+            bam_file=bam_file,
+            temp_folder=location)
+        tenx.filtered_umi_to_fasta(
+            location,
+            "X",
+            True,
+            10,
+            "," .join(itertools.chain(single_barcode_fastas)))
+        fastas = glob.glob(
+            os.path.join(location, "*_bam2fasta.fasta"))
+        meta_txts = glob.glob(
+            os.path.join(os.getcwd(), "*_meta.txt"))
+
+        assert len(meta_txts) == 4
+        for meta_txt in meta_txts:
+            if os.path.exists(meta_txt):
+                os.unlink(meta_txt)
+        assert len(fastas) == 0
