@@ -186,12 +186,17 @@ def convert(args):
 
     chunksize = calculate_chunksize(unique_barcodes, n_jobs)
 
+    chunksize = calculate_chunksize(unique_barcodes, n_jobs)
+    pool_lists = []
+    for i in range(0, unique_barcodes, chunksize):
+        pool_lists.append(all_fastas_sorted[i: i + chunksize])
+
     logger.info(
         "Pooled %d and chunksize %d mapped for %d lists",
-        n_jobs, chunksize, len(all_fastas_sorted))
+        n_jobs, chunksize, len(pool_lists))
 
-    list(pool.imap(
-        lambda fasta: func(fasta), all_fastas_sorted, chunksize=chunksize))
+    pool.imap_unordered(
+        lambda pool_list: list(map(func, pool_list)), pool_lists)
 
     pool.close()
     pool.join()
