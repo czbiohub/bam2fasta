@@ -156,7 +156,7 @@ def convert(args):
     # filtering that would result in a huge list if each barcode
     # is saved as a separate element, hence the string
     all_fastas = "," .join(itertools.chain(*(
-        pool.imap(
+        pool.imap_unordered(
             lambda x: func(x.encode('utf-8')),
             filenames, chunksize=chunksize))))
 
