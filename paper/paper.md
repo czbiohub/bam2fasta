@@ -28,7 +28,7 @@ affiliations:
 
 # Summary
 
-Single-cell RNA sequencing such as Drop-Seq [McCarroll:2015], 10x Genomics and other microfluidics platforms made leaps over the last decades in the amount of cells that can be sequenced in parallel.
+Single-cell RNA sequencing such as Drop-Seq [McCarroll:2015] made leaps over the last decades in the amount of cells that can be sequenced in parallel.
 Droplet microfluidics allows Cell Barcodes (CB), along with their unique molecular identifier (UMI) labeled RNA transcripts,  to be sequenced simultaneously with many other cell barcodes of a homogenized tissue.
 After alignment, the reads are demultiplexed to cell barcodes, and the whole sequencing run is stored as a binary alignment map file type known as a `.bam` file [Li:2009].
 As the demultiplexing occurs after alignment, there is no way to intercept these workflows to extract a single cell's sequences, e.g. as a simple [FASTA])(https://en.wikipedia.org/wiki/FASTA_format) or [FASTQ](https://en.wikipedia.org/wiki/FASTQ_format)-formatted file.
@@ -36,7 +36,6 @@ As the demultiplexing occurs after alignment, there is no way to intercept these
 As there is no way to identify cells with many reads or few reads *a priori* to alignment, there are many sequences in the bam file with potentially no filter on the minimum number of observations.
 There can also be cellular barcodes incorrectly tagged in the `.bam` file due to an error introduced in the chemical reaction, resulting in very few UMI's for that barcode, and these barcodes need to be discarded.
 Thus, the size of the resulting `.bam` alignment files are in magnitudes of 10s of GB, and by requiring a minimum number of observed molecular UMIs per cell barcode, could be potentially reduced to 10s of MB, a reduction by three orders of magnitude.
-[[Note: would it be possible to add a histogram of the number of reads per UMI? I think that would visually demonstrate the sparsity of data in these files very well.]]
 
 Other existing tools such as `samtools`, `seqtk`, and `bam2bed` currently do not have the ability to remove cellular barcodes with very little data, limiting the downstream potential of the single-cell `.bam` alignment files.
 More importantly, the `.bam` may have reads from UMIs that do not contain unique sequence.
@@ -96,7 +95,7 @@ bam2fasta has several adavantages.
 `bam2fasta` can read `.bam` files of any size, and convert to FASTA format quickly.
 It is fills the gap to quickly process single-cell RNA-seq `.bam` files, which have unique needs, such as filtering per cell barcode.
 This method primarily gives us time and memory performance improvement.
-It reduces time from days or just process running out of memory to hours which is concluded from testing on 6-12 GB `.bam` files.
+It reduces time from days or just process running out of memory to hours which is concluded from testing on 6-12 GB `.bam` dropseq files.
 `bam2fasta` takes advantage of sharding which is analogous to tiled rendering in images to save memory and `multiprocessing` and string manipulations to save time.
 Depending on the size of `.bam` file and available cores of the compute environment, the time and memory can can be further reduced.
 
