@@ -1,9 +1,9 @@
 import argparse
 
-DEFAULT_LINE_COUNT = 1500
-DEFAULT_DELIMITER = "X"
 DEFAULT_PROCESSES = 2
-DEFUALT_MIN_UMI_PER_BARCODE = 0
+DEFUALT_MIN_UMI_PER_BARCODE = 100
+CELL_BARCODE_PATTERN = r'(CB|XC):Z:([ACGT]+)\-1'
+MOLECULAR_BARCODE_PATTERN = '(UB|XB):Z:([ACGT]+)'
 
 
 class Bam2FastaArgumentParser(argparse.ArgumentParser):
@@ -38,30 +38,24 @@ def create_parser():
         '-p', '--processes', default=DEFAULT_PROCESSES, type=int,
         help='Number of processes to use for reading 10x bam file')
     parser.add_argument(
-        '--delimiter', default=DEFAULT_DELIMITER, type=str,
-        help='delimiter between sequences of the same barcode')
-    parser.add_argument(
         '--save-fastas', default="", type=str,
         help='save merged fastas for all the unique'
         'barcodes to {CELL_BARCODE}.fasta '
         'in the absolute path given by this flag'
         'By default, fastas are saved in current directory')
     parser.add_argument(
-        '--save-intermediate-files', default="/tmp/", type=str,
-        help='save temporary fastas and chunks of bam files'
-        'in the absolute path given by this flag'
-        'By default, they are saved in temp directory.'
-        'An important note is This might cause'
-        'not enough space on the device left depending on the size of your'
-        'bam file and harddisk space allocated for tmp folder on your machine,'
-        'so its better to specify a directory.'
-        'These files are deleted automatically at the end of the program')
+        '--save-intermediate-files', default="", type=str,
+        help='save intermediate fasta gzips')
     parser.add_argument(
-        '--line-count', type=int,
-        help='Line/Alignment count for each bam shard, higher the count lesser'
-        'the number of temporary bam files and shards created, increase the'
-        'default number according to the size of the bam file',
-        default=DEFAULT_LINE_COUNT)
+        "--cell-barcode-pattern", type=str,
+        help="Regular expressions for cell barcodes. Default is"
+        " 10x Genomics 'CB:Z' tag",
+        default=CELL_BARCODE_PATTERN)
+    parser.add_argument(
+        "--molecular-barcode-pattern", type=str,
+        help="Regular expressions for molecular barcodes. "
+             "Default is 10x Genomics 'UB:Z' tag",
+        default=MOLECULAR_BARCODE_PATTERN)
     parser.add_argument(
         '--rename-10x-barcodes', type=str,
         help="Tab-separated file mapping 10x barcode name to new name"
