@@ -58,6 +58,7 @@ def test_run_bam2fasta_supply_all_args():
 
         status, out, err = utils.run_shell_cmd(
             'bam2fasta convert --filename ' + testdata1 +
+            '--method shard' +
             ' --min-umi-per-barcode 10' +
             ' --write-barcode-meta-csv ' + csv_path +
             ' --save-intermediate-files ' + temp_fastas_dir +
@@ -96,7 +97,7 @@ def test_run_bam2fasta_default_args():
             os.makedirs(fastas_dir)
 
         status, out, err = utils.run_shell_cmd(
-            'bam2fasta convert --filename ' + testdata1,
+            'bam2fasta convert --method shard --filename ' + testdata1,
             in_directory=location)
 
         assert status == 0
@@ -116,7 +117,8 @@ def test_run_convert():
             os.makedirs(fastas_dir)
 
         fasta_files = cli.convert(
-            ['--filename', testdata1, '--save-fastas', location])
+            ['--filename', testdata1, '--save-fastas', location,
+             '--method', 'shard'])
 
         barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
         assert len(barcodes) == 8

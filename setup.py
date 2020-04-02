@@ -55,7 +55,7 @@ SETUP_METADATA = \
                              "pysam==0.15.3",
                              "tqdm==4.36.1",
                              "numpy==1.16.1",
-                             "pandas==0.25.1"],
+                             "pandas==0.24.1"],
         "setup_requires": [
             "setuptools>=38.6.0",
             "setuptools_scm",
