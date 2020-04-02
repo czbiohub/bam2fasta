@@ -415,16 +415,18 @@ def get_fastq_unaligned(input_bam, n_cpus, save_intermediate_files):
     barcodes : list
         List of QC-passing barcodes from 'barcodes.tsv'
     """
-    converted_bam = input_bam.replace(".bam", "_conveted.bam")
+    basename = os.path.basename(input_bam)
+    converted_bam = basename.replace(".bam", "_conveted.bam")
+    converted_bam = os.path.join(save_intermediate_files, converted_bam)
     pysam.view(
-        input_bam, *["-f4", converted_bam],
+        input_bam, *["-f4", "-o", converted_bam],
         catch_stdout=False)
     fastq = pysam.fastq(
         converted_bam,
         *["--threads", "{}".format(n_cpus), "-T", TENX_TAGS]).encode()
     fastq_gz = os.path.join(
         save_intermediate_files,
-        "{}__unaligned.fastq.gz".format(input_bam.replace(".bam", "")))
+        "{}__unaligned.fastq.gz".format(basename.replace(".bam", "")))
     output = gzip.open(fastq_gz, 'wb')
     try:
         output.write(fastq)
@@ -445,7 +447,9 @@ def get_fastq_aligned(input_bam, n_cpus, save_intermediate_files):
     barcodes : list
         List of QC-passing barcodes from 'barcodes.tsv'
     """
-    converted_bam = input_bam.replace(".bam", "_conveted.bam")
+    basename = os.path.basename(input_bam)
+    converted_bam = basename.replace(".bam", "_conveted.bam")
+    converted_bam = os.path.join(save_intermediate_files, converted_bam)
     pysam.view(
         input_bam, *["-ub", "-F", "256", "-q", "255", "-o", converted_bam],
         catch_stdout=False)
@@ -454,8 +458,7 @@ def get_fastq_aligned(input_bam, n_cpus, save_intermediate_files):
         *["--threads", "{}".format(n_cpus), "-T", TENX_TAGS]).encode()
     fastq_gz = os.path.join(
         save_intermediate_files,
-        "{}__aligned.fastq.gz".format(input_bam.replace(".bam", "")))
-
+        "{}__aligned.fastq.gz".format(basename.replace(".bam", "")))
     output = gzip.open(fastq_gz, 'wb')
     try:
         output.write(fastq)
@@ -569,7 +572,7 @@ def count_umis_per_cell(
         reads,
         cell_barcode_pattern,
         molecular_barcode_pattern)
-    if barcodes is None:
+    if barcodes is not None:
         renamer = parse_barcode_renamer(
             read_barcodes_file(barcodes), rename_10x_barcodes)
         umi_per_barcode = {

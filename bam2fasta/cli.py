@@ -197,16 +197,16 @@ def convert(args):
 
         pool.close()
         pool.join()
-        fastas = glob.glob(os.path.join(args.save_fastas, "*_bam2fasta.fasta"))
 
         if args.write_barcode_meta_csv:
             write_to_barcode_meta_csv()
-        logger.info(
-            "time taken to write %d fastas is %.5f seconds",
-            len(fastas), time.time() - startt)
+        fastas = glob.glob(os.path.join(args.save_fastas, "*_bam2fasta.fasta"))
     else:
-        output_fastq_gzip = "{}__concatenated.fastq.gz".format(
-            args.filename.replace(".bam", ""))
+        basename = os.path.basename(args.filename)
+        output_fastq_gzip = os.path.join(
+            args.save_intermediate_files,
+            "{}__concatenated.fastq.gz".format(
+                basename.replace(".bam", "")))
         tenx_utils.concatenate_gzip_files(
             [tenx_utils.get_fastq_unaligned(
                 args.filename, n_jobs, save_intermediate_files),
@@ -232,5 +232,8 @@ def convert(args):
             args.save_fastas,
             args.cell_barcode_pattern,
             n_jobs)
-
+        fastas = glob.glob(os.path.join(args.save_fastas, "*.fastq.gz"))
+    logger.info(
+        "time taken to write %d fastas is %.5f seconds",
+        len(fastas), time.time() - startt)
     return fastas

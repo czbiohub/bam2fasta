@@ -13,7 +13,6 @@ def test_bam2fasta_info():
 
     # no output to stderr
     assert not err
-    print(status, out, err)
     assert "bam2fasta version" in out
     assert "loaded from path" in out
     assert VERSION in out
@@ -69,7 +68,6 @@ def test_run_bam2fasta_supply_all_args():
         assert status == 0
         with open(csv_path, 'rb') as f:
             data = [line.split() for line in f]
-        print(data)
         assert len(data) == 9
         fasta_files = os.listdir(fastas_dir)
         barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
@@ -105,7 +103,6 @@ def test_run_bam2fasta_default_args():
         barcodes = [
             filename.replace(".fasta", "") for
             filename in fasta_files if filename.endswith("_bam2fasta.fasta")]
-        print(barcodes)
         assert len(barcodes) == 8
 
 
@@ -119,6 +116,20 @@ def test_run_convert():
         fasta_files = cli.convert(
             ['--filename', testdata1, '--save-fastas', location,
              '--method', 'shard'])
+
+        barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
+        assert len(barcodes) == 8
+
+
+def test_run_convert_no_shard():
+    with utils.TempDirectory() as location:
+        testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+        fastas_dir = os.path.join(location)
+        if not os.path.exists(fastas_dir):
+            os.makedirs(fastas_dir)
+
+        fasta_files = cli.convert(
+            ['--filename', testdata1, '--save-fastas', location])
 
         barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
         assert len(barcodes) == 8
