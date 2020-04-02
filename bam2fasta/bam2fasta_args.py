@@ -4,6 +4,8 @@ DEFAULT_LINE_COUNT = 1500
 DEFAULT_DELIMITER = "X"
 DEFAULT_PROCESSES = 2
 DEFUALT_MIN_UMI_PER_BARCODE = 0
+CELL_BARCODE_PATTERN = r'(CB|XC):Z:([ACGT]+)\-1'
+MOLECULAR_BARCODE_PATTERN = '(UB|XB):Z:([ACGT]+)'
 
 
 class Bam2FastaArgumentParser(argparse.ArgumentParser):
@@ -63,6 +65,16 @@ def create_parser():
         'default number according to the size of the bam file',
         default=DEFAULT_LINE_COUNT)
     parser.add_argument(
+        "--cell-barcode-pattern", type=str,
+        help="Regular expressions for cell barcodes. Default is"
+        " 10x Genomics 'CB:Z' tag",
+        default=CELL_BARCODE_PATTERN)
+    parser.add_argument(
+        "--molecular-barcode-pattern", type=str,
+        help="Regular expressions for molecular barcodes. "
+             "Default is 10x Genomics 'UB:Z' tag",
+        default=MOLECULAR_BARCODE_PATTERN)
+    parser.add_argument(
         '--rename-10x-barcodes', type=str,
         help="Tab-separated file mapping 10x barcode name to new name"
         "e.g. with channel or cell "
@@ -71,4 +83,8 @@ def create_parser():
         '--barcodes-file', type=str,
         help="Barcodes file if the input is unfiltered 10x bam file",
         required=False)
+    parser.add_argument(
+        '--method', type=str,
+        help="To use shard & count method,specify shard, by default it doesnt",
+        required=False, default="no_shard")
     return parser

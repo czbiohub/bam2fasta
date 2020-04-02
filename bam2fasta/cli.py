@@ -127,80 +127,110 @@ def convert(args):
     # Shard bam file to smaller bam file
     logger.info('... reading bam file from %s', args.filename)
     n_jobs = args.processes
-    filenames = tenx_utils.shard_bam_file(
-        args.filename,
-        args.line_count,
-        args.save_intermediate_files)
+    save_intermediate_files = args.save_intermediate_files
+    if args.method == "shard":
+        filenames = tenx_utils.shard_bam_file(
+            args.filename,
+            args.line_count,
+            save_intermediate_files)
 
-    # Create a per-cell fasta generator of sequences
-    # If the reads should be filtered by barcodes and umis
-    # umis are saved in fasta file as record name and name of
-    # the fasta file is the barcode
-    func = partial(
-        tenx_utils.bam_to_temp_fasta,
-        barcodes,
-        args.rename_10x_barcodes,
-        args.delimiter,
-        args.save_intermediate_files)
-
-    length_sharded_bam_files = len(filenames)
-    chunksize = calculate_chunksize(length_sharded_bam_files,
-                                    n_jobs)
-    pool = multiprocessing.Pool(processes=n_jobs)
-    logger.info(
-        "multiprocessing pool processes {} and chunksize {} calculated".format(
-            n_jobs, chunksize))
-    # All the fastas are stored in a string instead of a list
-    # This saves memory per element of the list by 8 bits
-    # If we have unique barcodes in the order of 10^6 before
-    # filtering that would result in a huge list if each barcode
-    # is saved as a separate element, hence the string
-    all_fastas = "," .join(itertools.chain(*(
-        pool.imap(
-            lambda x: func(x.encode('utf-8')),
-            filenames, chunksize=chunksize))))
-
-    # clean up the memmap and sharded intermediary bam files
-    [os.unlink(file) for file in filenames if os.path.exists(file)]
-    del filenames
-    logger.info("Deleted intermediary bam")
-
-    all_fastas_sorted = get_unique_barcodes(all_fastas)
-    unique_barcodes = len(all_fastas_sorted)
-    logger.info("Found %d unique barcodes", unique_barcodes)
-    # Cleaning up to retrieve memory from unused large variables
-    del all_fastas
-    umi_filter = True if args.min_umi_per_barcode != 0 else False
-    if umi_filter:
+        # Create a per-cell fasta generator of sequences
+        # If the reads should be filtered by barcodes and umis
+        # umis are saved in fasta file as record name and name of
+        # the fasta file is the barcode
         func = partial(
-            tenx_utils.filtered_umi_to_fasta,
-            args.save_fastas,
+            tenx_utils.bam_to_temp_fasta,
+            barcodes,
+            args.rename_10x_barcodes,
             args.delimiter,
-            args.write_barcode_meta_csv,
-            args.min_umi_per_barcode)
+            save_intermediate_files)
+
+        length_sharded_bam_files = len(filenames)
+        chunksize = calculate_chunksize(length_sharded_bam_files,
+                                        n_jobs)
+        pool = multiprocessing.Pool(processes=n_jobs)
+        logger.info(
+            "multiprocessing pool processes {} & chunksize {}".format(
+                n_jobs, chunksize))
+        # All the fastas are stored in a string instead of a list
+        # This saves memory per element of the list by 8 bits
+        # If we have unique barcodes in the order of 10^6 before
+        # filtering that would result in a huge list if each barcode
+        # is saved as a separate element, hence the string
+        all_fastas = "," .join(itertools.chain(*(
+            pool.imap(
+                lambda x: func(x.encode('utf-8')),
+                filenames, chunksize=chunksize))))
+
+        # clean up the memmap and sharded intermediary bam files
+        [os.unlink(file) for file in filenames if os.path.exists(file)]
+        del filenames
+        logger.info("Deleted intermediary bam")
+
+        all_fastas_sorted = get_unique_barcodes(all_fastas)
+        unique_barcodes = len(all_fastas_sorted)
+        logger.info("Found %d unique barcodes", unique_barcodes)
+        # Cleaning up to retrieve memory from unused large variables
+        del all_fastas
+        umi_filter = True if args.min_umi_per_barcode != 0 else False
+        if umi_filter:
+            func = partial(
+                tenx_utils.filtered_umi_to_fasta,
+                args.save_fastas,
+                args.delimiter,
+                args.write_barcode_meta_csv,
+                args.min_umi_per_barcode)
+        else:
+            func = partial(
+                tenx_utils.unfiltered_umi_to_fasta,
+                args.save_fastas,
+                args.delimiter)
+
+        chunksize = calculate_chunksize(unique_barcodes, n_jobs)
+
+        logger.info(
+            "Pooled %d and chunksize %d mapped for %d lists",
+            n_jobs, chunksize, len(all_fastas_sorted))
+
+        list(pool.imap(
+            lambda fasta: func(fasta), all_fastas_sorted, chunksize=chunksize))
+
+        pool.close()
+        pool.join()
+        fastas = glob.glob(os.path.join(args.save_fastas, "*_bam2fasta.fasta"))
+
+        if args.write_barcode_meta_csv:
+            write_to_barcode_meta_csv()
+        logger.info(
+            "time taken to write %d fastas is %.5f seconds",
+            len(fastas), time.time() - startt)
     else:
-        func = partial(
-            tenx_utils.unfiltered_umi_to_fasta,
+        output_fastq_gzip = "{}__concatenated.fastq.gz".format(
+            args.filename.replace(".bam", ""))
+        tenx_utils.concatenate_gzip_files(
+            [tenx_utils.get_fastq_unaligned(
+                args.filename, n_jobs, save_intermediate_files),
+             tenx_utils.get_fastq_aligned(
+                args.filename, n_jobs, save_intermediate_files)],
+            output_fastq_gzip)
+
+        good_barcodes_filename = os.path.join(
+            args.save_intermediate_files, "good_barcodes.tsv")
+        tenx_utils.count_umis_per_cell(
+            output_fastq_gzip,
+            args.write_barcode_meta_csv,
+            args.cell_barcode_pattern,
+            args.molecular_barcode_pattern,
+            args.min_umi_per_barcode,
+            args.barcodes_file,
+            args.rename_10x_barcodes,
+            good_barcodes_filename)
+
+        tenx_utils.make_per_cell_fastas(
+            output_fastq_gzip,
+            good_barcodes_filename,
             args.save_fastas,
-            args.delimiter)
-
-    chunksize = calculate_chunksize(unique_barcodes, n_jobs)
-
-    logger.info(
-        "Pooled %d and chunksize %d mapped for %d lists",
-        n_jobs, chunksize, len(all_fastas_sorted))
-
-    list(pool.imap(
-        lambda fasta: func(fasta), all_fastas_sorted, chunksize=chunksize))
-
-    pool.close()
-    pool.join()
-    fastas = glob.glob(os.path.join(args.save_fastas, "*_bam2fasta.fasta"))
-
-    if args.write_barcode_meta_csv:
-        write_to_barcode_meta_csv()
-    logger.info(
-        "time taken to write %d fastas is %.5f seconds",
-        len(fastas), time.time() - startt)
+            args.cell_barcode_pattern,
+            n_jobs)
 
     return fastas
