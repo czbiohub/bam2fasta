@@ -6,6 +6,7 @@ DEFAULT_PROCESSES = 2
 DEFUALT_MIN_UMI_PER_BARCODE = 0
 CELL_BARCODE_PATTERN = r'(CB|XC):Z:([A-Za-z0-9_-]+)\-1'
 MOLECULAR_BARCODE_PATTERN = '(UB|XB):Z:([ACGT]+)'
+DEFAULT_METHOD = "no_shard"
 
 
 class Bam2FastaArgumentParser(argparse.ArgumentParser):
@@ -86,5 +87,5 @@ def create_parser():
     parser.add_argument(
         '--method', type=str,
         help="To use shard & count method,specify shard, by default it doesnt",
-        required=False, default="no_shard")
+        required=False, default=DEFAULT_METHOD)
     return parser

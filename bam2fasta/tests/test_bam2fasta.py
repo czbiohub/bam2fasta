@@ -57,7 +57,7 @@ def test_run_bam2fasta_supply_all_args():
 
         status, out, err = utils.run_shell_cmd(
             'bam2fasta convert --filename ' + testdata1 +
-            '--method shard' +
+            ' --method shard' +
             ' --min-umi-per-barcode 10' +
             ' --write-barcode-meta-csv ' + csv_path +
             ' --save-intermediate-files ' + temp_fastas_dir +

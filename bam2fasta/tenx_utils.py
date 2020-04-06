@@ -317,23 +317,19 @@ def barcode_umi_seq_to_fasta(
         Path to save intermediate barcode meta txt files
     """
     # Tracking UMI Counts
-    umis = []
-    all_split_seqs = []
     # Iterating through fasta files for single barcode from different
     # fastas
     read_count = 0
     logger.info("SINGLE ")
     logger.info(single_barcode_fastas)
+    umi_dict = defaultdict(list)
     for fasta in iter_split(single_barcode_fastas, ","):
             # calculate unique umi, sequence counts
         for record in screed.open(fasta):
             sequence = record.sequence
-            umi = record.name
-
             # Appending sequence of a umi to the fasta
             split_seqs = sequence.split(delimiter)
-            all_split_seqs.append(split_seqs)
-            umis.append(umi)
+            umi_dict[record.name] += split_seqs
             read_count += len(split_seqs)
         # Delete fasta file in tmp folder
         if os.path.exists(fasta):
@@ -341,7 +337,7 @@ def barcode_umi_seq_to_fasta(
 
     # Write umi count, read count per barcode into a metadata file
     unique_fasta_file = os.path.basename(fasta)
-    umi_count = len(umis)
+    umi_count = len(umi_dict)
     if write_barcode_meta_csv:
         unique_meta_file = unique_fasta_file.replace(".fasta", "_meta.txt")
         unique_meta_file = os.path.join(
@@ -351,20 +347,21 @@ def barcode_umi_seq_to_fasta(
 
     # If umi count is greater than min_umi_per_barcode write the sequences
     # collected to fasta file for the barcode named as barcode_bam2fasta.fasta
+    logger.info("{} {}".format(umi_count, min_umi_per_barcode))
     if umi_count > min_umi_per_barcode:
         barcode_name = unique_fasta_file.replace(".fasta", "")
         with open(
             os.path.join(
                 save_fastas,
                 barcode_name + "_bam2fasta.fasta"), "w") as f:
-            for index, seqs in enumerate(all_split_seqs):
-                for seq in seqs:
+            for umi, seqs in umi_dict.items():
+                for index, seq in enumerate(seqs):
                     if seqs == "":
                         continue
                     f.write(
                         ">{}\n{}\n".format(
                             barcode_name + "_" +
-                            umis[index] + "_" + '{:03d}'.format(index), seq))
+                            umi + "_" + '{:03d}'.format(index), seq))
 
 
 def get_fastq_unaligned(input_bam, n_cpus, save_intermediate_files):
