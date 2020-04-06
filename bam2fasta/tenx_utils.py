@@ -20,6 +20,7 @@ import numpy as np
 
 CELL_BARCODES = ['CB', 'XC']
 UMIS = ['UB', 'XM']
+TENX_TAGS = "CB,UB,XC,XM"
 
 logger = logging.getLogger(__name__)
 
@@ -251,16 +252,21 @@ def bam_to_temp_fasta(
 def write_cell_sequences(cell_sequences, temp_folder, delimiter="X"):
     """
     Write each cell's sequences to an individual file
-        Parameters
+
+    Parameters
     ----------
-    cell_sequences: dictionary with a cell and corresponding sequence
-    ithe cell key is expected to contain umi as well
-    separated by the delimiter.
-    else {AAAAAAAAAXACTAG: AGCTACACTA} - In this case AAAAAAAAA would be cell
-    barcode and ACTAG would be umi. The umi will be further used by downstream
-    processing functions appropriately. The barcode is safely returned as the
-    fasta filename and the umi is saved as record.name/sequence id in the
-    fasta file
+    cell_sequences: dict
+        dictionary with a cell and corresponding sequence
+        ithe cell key is expected to contain umi as well
+        separated by the delimiter.
+        else {AAAAAAAAAXACTAG: AGCTACACTA} - In this case
+        AAAAAAAAA would be cell
+        barcode and ACTAG would be umi. The umi will be further
+        used by downstream
+        processing functions appropriately.
+        The barcode is safely returned as the
+        fasta filename and the umi is saved as record.name/sequence id in the
+        fasta file
     delimiter : str, default X
         Used to separate barcode and umi in the cell sequences dict.
     temp_folder: str
@@ -271,10 +277,10 @@ def write_cell_sequences(cell_sequences, temp_folder, delimiter="X"):
     filenames: generator
         one temp fasta filename for one cell/cell_umi with  sequence
     """
-    temp_folder = tempfile.mkdtemp(prefix=temp_folder)
+    barcodes_folder = tempfile.mkdtemp(dir=temp_folder)
     for cell, seq in cell_sequences.items():
         barcode, umi = cell.split(delimiter)
-        filename = os.path.join(temp_folder, barcode + '.fasta')
+        filename = os.path.join(barcodes_folder, barcode + '.fasta')
 
         # Append to an existing barcode file with a different umi
         with open(filename, "a") as f:
@@ -282,76 +288,33 @@ def write_cell_sequences(cell_sequences, temp_folder, delimiter="X"):
         yield filename
 
 
-def unfiltered_umi_to_fasta(
-        save_fastas,
-        delimiter,
-        single_barcode_fastas):
-    """
-    Returns signature records across fasta files for a unique barcode
-    Parameters
-    ----------
-    save_fastas: directory to save the fasta file for the barcode in
-    delimiter: separator between two reads, usually 'X'
-    single_barcode_fastas: comma separated list of fastas belonging to the
-    same barcode that were within different bam shards
-    """
-    # Getting all fastas for a given barcode
-    # from different shards
-    count = 0
-    # Iterating through fasta files for single barcode from different
-    # fastas
-    for fasta in iter_split(single_barcode_fastas, ","):
-
-        # Initializing the fasta file to write
-        # all the sequences from all bam shards to
-        if count == 0:
-            unique_fasta_file = os.path.basename(fasta)
-            barcode_name = unique_fasta_file.replace(".fasta", "")
-            f = open(os.path.join(
-                save_fastas, barcode_name + "_bam2fasta.fasta"), "w")
-
-        # Add sequence
-        for record in screed.open(fasta):
-            sequence = record.sequence
-            umi = record.name
-
-            split_seqs = sequence.split(delimiter)
-            for index, seq in enumerate(split_seqs):
-                if seq == "":
-                    continue
-                f.write(">{}\n{}\n".format(
-                    barcode_name + "_" + umi + "_" + '{:03d}'.format(
-                        index), seq))
-
-        # Delete fasta file in tmp folder
-        if os.path.exists(fasta):
-            os.unlink(fasta)
-
-        count += 1
-
-    # close the fasta file
-    f.close()
-
-
-def filtered_umi_to_fasta(
+def barcode_umi_seq_to_fasta(
         save_fastas,
         delimiter,
         write_barcode_meta_csv,
         min_umi_per_barcode,
+        save_intermediate_files,
         single_barcode_fastas):
     """
-    Returns signature records across fasta files for a unique barcode
+    Writes signature records across fasta files for a unique barcode
     Parameters
     ----------
-    save_fastas: directory to save the fasta file for the barcode in
-    delimiter: separator between two reads, usually 'X'
-    write_barcode_meta_csv: boolean flag, if true
-    Metadata per barcode i.e umi count and read count is written
-    {barcode}_meta.txt file
-    min_umi_per_barcode: Cell barcodes that have less than min_umi_per_barcode
-    are ignored
-    single_barcode_fastas: comma separated list of fastas belonging to the
-    same barcode that were within different bam shards
+    save_fastas: str
+        directory to save the fasta file for the barcode in
+    delimiter: str
+        separator between two reads, usually 'X'
+    write_barcode_meta_csv: bool
+        boolean flag, if true
+        Metadata per barcode i.e umi count and read count is written
+        {barcode}_meta.txt file
+    min_umi_per_barcode: int
+        Cell barcodes that have less than min_umi_per_barcode
+        are ignored
+    single_barcode_fastas: str
+        comma separated list of fastas belonging to the
+        same barcode that were within different bam shards
+    save_intermediate_files: str
+        Path to save intermediate barcode meta txt files
     """
     # Tracking UMI Counts
     umis = []
@@ -359,6 +322,8 @@ def filtered_umi_to_fasta(
     # Iterating through fasta files for single barcode from different
     # fastas
     read_count = 0
+    logger.info("SINGLE ")
+    logger.info(single_barcode_fastas)
     for fasta in iter_split(single_barcode_fastas, ","):
             # calculate unique umi, sequence counts
         for record in screed.open(fasta):
@@ -379,6 +344,8 @@ def filtered_umi_to_fasta(
     umi_count = len(umis)
     if write_barcode_meta_csv:
         unique_meta_file = unique_fasta_file.replace(".fasta", "_meta.txt")
+        unique_meta_file = os.path.join(
+            save_intermediate_files, unique_meta_file)
         with open(unique_meta_file, "w") as ff:
             ff.write("{} {}".format(umi_count, read_count))
 
@@ -399,21 +366,22 @@ def filtered_umi_to_fasta(
                             barcode_name + "_" +
                             umis[index] + "_" + '{:03d}'.format(index), seq))
 
-TENX_TAGS = "CB,UB,XC,XM"
-logger = logging.getLogger(__name__)
-
 
 def get_fastq_unaligned(input_bam, n_cpus, save_intermediate_files):
-    """Read single-column barcodes.tsv and genes.tsv files from 10x.
+    """Get unaligned fastq sequences from bam.
 
     Parameters
     ----------
-    barcode_path : str
-        Name of a 10x 'barcodes.tsv' files
+    input_bam : str
+        Name of the bam file
+    n_cpus: int
+        number of threads to parallelize the bam file conversion across
+    save_intermediate_files: str
+        Path to save the output bam and fastq.gz file
     Returns
     -------
-    barcodes : list
-        List of QC-passing barcodes from 'barcodes.tsv'
+    fastq_gz : str
+        Path to converted fastq.gz file
     """
     basename = os.path.basename(input_bam)
     converted_bam = basename.replace(".bam", "_conveted.bam")
@@ -436,16 +404,20 @@ def get_fastq_unaligned(input_bam, n_cpus, save_intermediate_files):
 
 
 def get_fastq_aligned(input_bam, n_cpus, save_intermediate_files):
-    """Read single-column barcodes.tsv and genes.tsv files from 10x.
+    """Get aligned fastq sequences from bam.
 
     Parameters
     ----------
-    barcode_path : str
-        Name of a 10x 'barcodes.tsv' files
+    input_bam : str
+        Name of the bam file
+    n_cpus: int
+        number of threads to parallelize the bam file conversion across
+    save_intermediate_files: str
+        Path to save the output bam and fastq.gz file
     Returns
     -------
-    barcodes : list
-        List of QC-passing barcodes from 'barcodes.tsv'
+    fastq_gz : str
+        Path to converted fastq.gz file
     """
     basename = os.path.basename(input_bam)
     converted_bam = basename.replace(".bam", "_conveted.bam")
@@ -468,16 +440,17 @@ def get_fastq_aligned(input_bam, n_cpus, save_intermediate_files):
 
 
 def concatenate_gzip_files(input_gz_filenames, output_gz):
-    """Read single-column barcodes.tsv and genes.tsv files from 10x.
+    """Return concatenated gzipped file containing
+       unaligned and aligned fastq sequences from bam.
 
     Parameters
     ----------
-    barcode_path : str
-        Name of a 10x 'barcodes.tsv' files
+    input_gz_filenames : list
+        list of unaligned and aligned fastq sequences
     Returns
     -------
-    barcodes : list
-        List of QC-passing barcodes from 'barcodes.tsv'
+    output_gz : str
+        Path to concatenated fastq.gz file
     """
     with open(output_gz, 'wb') as wfp:
         for fn in input_gz_filenames:
@@ -486,16 +459,18 @@ def concatenate_gzip_files(input_gz_filenames, output_gz):
 
 
 def get_cell_barcode(record, cell_barcode_pattern):
-    """Read single-column barcodes.tsv and genes.tsv files from 10x.
+    """Return the cell barcode in the record name.
 
     Parameters
     ----------
-    barcode_path : str
-        Name of a 10x 'barcodes.tsv' files
+    record : screed record
+        screed record containing the cell barcode
+    cell_barcode_pattern: regex pattern
+        cell barcode pattern to detect in the record name
     Returns
     -------
-    barcodes : list
-        List of QC-passing barcodes from 'barcodes.tsv'
+    barcode : str
+        Return cell barcode from the name, if it doesn't exit, returns None
     """
     found_cell_barcode = re.findall(cell_barcode_pattern, record['name'])
     if found_cell_barcode:
@@ -504,16 +479,18 @@ def get_cell_barcode(record, cell_barcode_pattern):
 
 def get_molecular_barcode(record,
                           molecular_barcode_pattern):
-    """Read single-column barcodes.tsv and genes.tsv files from 10x.
+    """Return the molecular barcode in the record name.
 
     Parameters
     ----------
-    barcode_path : str
-        Name of a 10x 'barcodes.tsv' files
+    record : screed record
+        screed record containing the molecular barcode
+    molecular_barcode_pattern: regex pattern
+        molecular barcode pattern to detect in the record name
     Returns
     -------
-    barcodes : list
-        List of QC-passing barcodes from 'barcodes.tsv'
+    barcode : str
+        Return molecular barcode from the name,if it doesn't exit, returns None
     """
     found_molecular_barcode = re.findall(molecular_barcode_pattern,
                                          record['name'])
@@ -521,19 +498,26 @@ def get_molecular_barcode(record,
         return found_molecular_barcode[0][1]
 
 
-def get_cell_barcode_umi_counts(reads,
-                                cell_barcode_pattern,
-                                molecular_barcode_pattern):
-    """Read single-column barcodes.tsv and genes.tsv files from 10x.
+def get_cell_barcode_umis(
+        reads,
+        cell_barcode_pattern,
+        molecular_barcode_pattern):
+    """Return a dictionary containing cell barcode string and list of
+    corresponding umis as the value
 
     Parameters
     ----------
-    barcode_path : str
-        Name of a 10x 'barcodes.tsv' files
+    reads : str
+        fasta path
+    cell_barcode_pattern: regex pattern
+        cell barcode pattern to detect in the record name
+    molecular_barcode_pattern: regex pattern
+        molecular barcode pattern to detect in the record name
     Returns
     -------
-    barcodes : list
-        List of QC-passing barcodes from 'barcodes.tsv'
+    barcode_counter : dict
+        dictionary containing cell barcode string and list of
+        corresponding umis as the value
     """
     barcode_counter = defaultdict(set)
 
@@ -556,19 +540,39 @@ def count_umis_per_cell(
         min_umi_per_cell,
         barcodes,
         rename_10x_barcodes,
-        good_barcodes):
-    """Read single-column barcodes.tsv and genes.tsv files from 10x.
+        barcodes_with_significant_umi_records):
+    """Writes to csv the barcodes and number of umis, and to good_barcodes the
+    barcodes with greater than or equal to min_umi_per_cell
 
     Parameters
     ----------
-    barcode_path : str
-        Name of a 10x 'barcodes.tsv' files
+    reads : str
+        read records from fasta path
+    csv: str
+        file to write barcodes and their corresponding number of umis
+    cell_barcode_pattern: regex pattern
+        cell barcode pattern to detect in the record name
+    molecular_barcode_pattern: regex pattern
+        molecular barcode pattern to detect in the record name
+    min_umi_per_cell: int
+        number of minimum umi per cell barcode
+    barcodes: str
+        csv file containing list of cellular barcode strings
+    rename_10x_barcodes : str
+        Path to tab-separated file mapping barcodes to their new name
+        e.g. with channel or cell annotation label,
+        e.g. AAATGCCCAAACTGCT-1    lung_epithelial_cell|AAATGCCCAAACTGCT-1
+    barcodes_with_significant_umi_records: str
+        write the valid
+        barcodes that have greater than or equal to min_umi_per_cell
     Returns
     -------
-    barcodes : list
-        List of QC-passing barcodes from 'barcodes.tsv'
+    Writes to csv barcodes and their corresponding number of umis
+    Writes to barcodes_with_significant_umi_records
+    list of the barcodes that have
+    greater than or equal to min_umi_per_cell
     """
-    barcode_counter = get_cell_barcode_umi_counts(
+    barcode_counter = get_cell_barcode_umis(
         reads,
         cell_barcode_pattern,
         molecular_barcode_pattern)
@@ -584,58 +588,70 @@ def count_umis_per_cell(
     series.to_csv(csv, header=False, index=False)
 
     filtered = pd.Series(series[series >= min_umi_per_cell].index)
-    filtered.to_csv(good_barcodes, header=False, index=False)
+    filtered.to_csv(
+        barcodes_with_significant_umi_records, header=False, index=False)
 
 
-def get_good_cell_barcode_records(reads, good_barcodes, cell_barcode_pattern):
-    """Read single-column barcodes.tsv and genes.tsv files from 10x.
+def get_good_cell_barcode_records(
+        reads, barcodes_with_significant_umi, cell_barcode_pattern):
+    """Returns dict of barcodes as keys and all the records containing
+        the barcode with significant umis
 
     Parameters
     ----------
-    barcode_path : str
-        Name of a 10x 'barcodes.tsv' files
+    reads : str
+        fasta path containing all records/reads
+    barcodes_with_significant_umi: list
+        write the valid
+        barcodes that have greater than or equal to min_umi_per_cell
+    cell_barcode_pattern: regex pattern
+        cell barcode pattern to detect in the record name
+
     Returns
     -------
-    barcodes : list
-        List of QC-passing barcodes from 'barcodes.tsv'
+    barcodes_with_significant_umi_records: dict
+        dict of barcodes as keys and all the records containing
+        the barcode with significant umis
     """
-    good_cell_barcode_records = defaultdict(list)
+    barcodes_with_significant_umi_records = defaultdict(list)
 
     with screed.open(reads) as f:
         for record in tqdm(f):
             cell_barcode = get_cell_barcode(record, cell_barcode_pattern)
-            if cell_barcode in good_barcodes:
-                good_cell_barcode_records[cell_barcode].append(record)
-    return good_cell_barcode_records
+            if cell_barcode in barcodes_with_significant_umi:
+                barcodes_with_significant_umi_records[
+                    cell_barcode].append(record)
+    return barcodes_with_significant_umi_records
 
 
 def record_to_fastq_string(record):
-    """Read single-column barcodes.tsv and genes.tsv files from 10x.
+    """Return the converted fastq string
 
     Parameters
     ----------
-    barcode_path : str
-        Name of a 10x 'barcodes.tsv' files
+    record : screed record
+        record in fasta
     Returns
     -------
-    barcodes : list
-        List of QC-passing barcodes from 'barcodes.tsv'
+    output : str
+        convert recotd to fastq string
     """
     return "@{}\n{}\n+\n{}\n".format(
         record['name'], record['sequence'], record['quality'])
 
 
-def write_records(records, filename):
-    """Read single-column barcodes.tsv and genes.tsv files from 10x.
+def write_fastq(records, filename):
+    """Write fastq strings converted records to filename
 
     Parameters
     ----------
-    barcode_path : str
-        Name of a 10x 'barcodes.tsv' files
+    records : list
+        list of screed records
+    filename : str
+        Path to .fastq string to write to
     Returns
     -------
-    barcodes : list
-        List of QC-passing barcodes from 'barcodes.tsv'
+    Write fastq strings converted records to filename
     """
     if filename.endswith('gz'):
         import gzip
@@ -649,28 +665,41 @@ def write_records(records, filename):
         f.writelines([record_to_fastq_string(r) for r in records])
 
 
-def make_per_cell_fastas(
+def make_per_cell_fastqs(
         reads,
-        good_barcodes_filename,
+        barcodes_with_significant_umi_file,
         outdir,
         cell_barcode_pattern,
         num_cpus):
-    """Read single-column barcodes.tsv and genes.tsv files from 10x.
+    """Write the filtered cell barcodes in reads
+    from barcodes_with_significant_umi_file
+    fastq.gzs to outdir
 
     Parameters
     ----------
-    barcode_path : str
-        Name of a 10x 'barcodes.tsv' files
+    reads : str
+        read records from fasta path
+    barcodes_with_significant_umi_file: str
+        csv file containing barcodes that have
+        greater than or equal to min_umi_per_cell
+    outdir: str
+        write the per cell barcode fastq.gzs to outdir
+    cell_barcode_pattern: regex pattern
+        cell barcode pattern to detect in the record name
+    num_cpus: int
+        number of cpus to parallelizing writing per barcode fastas to
     Returns
     -------
-    barcodes : list
-        List of QC-passing barcodes from 'barcodes.tsv'
+    Write the filtered cell barcodes in reads
+    from barcodes_with_significant_umi_file
+    fastq.gzs to outdir
     """
-    good_barcodes = read_barcodes_file(good_barcodes_filename)
+    barcodes_with_significant_umi = read_barcodes_file(
+        barcodes_with_significant_umi_file)
 
-    good_cell_barcode_records = get_good_cell_barcode_records(
-        reads, good_barcodes, cell_barcode_pattern)
+    barcodes_with_significant_umi_records = get_good_cell_barcode_records(
+        reads, barcodes_with_significant_umi, cell_barcode_pattern)
 
-    for cell_barcode, records in good_cell_barcode_records.items():
+    for cell_barcode, records in barcodes_with_significant_umi_records.items():
         filename = os.path.join(outdir, cell_barcode + ".fastq.gz")
-        write_records(records, filename)
+        write_fastq(records, filename)

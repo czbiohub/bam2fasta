@@ -28,6 +28,45 @@ def test_iter_split():
     assert expected == obtained
 
 
+def test_pass_alignment_qc():
+    barcodes = tenx.read_barcodes_file(
+        utils.get_test_data('10x-example/barcodes.tsv'))
+    bam = tenx.read_bam_file(
+        utils.get_test_data('10x-example/possorted_genome_bam.bam'))
+
+    total_pass = sum(1 for alignment in bam if
+                     tenx.pass_alignment_qc(alignment, barcodes))
+    assert total_pass == 439
+
+
+def test_pass_alignment_qc_filtered():
+    bam = tenx.read_bam_file(
+        utils.get_test_data('10x-example/possorted_genome_bam_filtered.bam'))
+    total_alignments = sum(1 for _ in bam)
+    bam = tenx.read_bam_file(
+        utils.get_test_data('10x-example/possorted_genome_bam_filtered.bam'))
+    assert total_alignments == 1500
+    total_pass = sum(1 for alignment in bam if
+                     tenx.pass_alignment_qc(alignment, None))
+    assert total_pass == 192
+
+
+def test_parse_barcode_renamer():
+    filename = utils.get_test_data('10x-example/barcodes.tsv')
+    barcodes = tenx.read_barcodes_file(filename)
+    renamer = tenx.parse_barcode_renamer(barcodes, None)
+    for key, value in renamer.items():
+        assert key == value
+    assert len(renamer) == len(barcodes)
+
+    renamer = tenx.parse_barcode_renamer(
+        barcodes, utils.get_test_data('10x-example/barcodes_renamer.tsv'))
+    for key, value in renamer.items():
+        assert key in value
+        assert "epithelial_cell" in value
+    assert len(renamer) == len(barcodes)
+
+
 def test_read_barcodes_file():
     filename = utils.get_test_data('10x-example/barcodes.tsv')
     barcodes = tenx.read_barcodes_file(filename)
@@ -68,45 +107,6 @@ def test_shard_bam_file():
         for bam_file in bam_shard_files:
             for line in tenx.read_bam_file(bam_file):
                 assert line == next(whole_bam_file)
-
-
-def test_pass_alignment_qc():
-    barcodes = tenx.read_barcodes_file(
-        utils.get_test_data('10x-example/barcodes.tsv'))
-    bam = tenx.read_bam_file(
-        utils.get_test_data('10x-example/possorted_genome_bam.bam'))
-
-    total_pass = sum(1 for alignment in bam if
-                     tenx.pass_alignment_qc(alignment, barcodes))
-    assert total_pass == 439
-
-
-def test_pass_alignment_qc_filtered():
-    bam = tenx.read_bam_file(
-        utils.get_test_data('10x-example/possorted_genome_bam_filtered.bam'))
-    total_alignments = sum(1 for _ in bam)
-    bam = tenx.read_bam_file(
-        utils.get_test_data('10x-example/possorted_genome_bam_filtered.bam'))
-    assert total_alignments == 1500
-    total_pass = sum(1 for alignment in bam if
-                     tenx.pass_alignment_qc(alignment, None))
-    assert total_pass == 192
-
-
-def test_parse_barcode_renamer():
-    filename = utils.get_test_data('10x-example/barcodes.tsv')
-    barcodes = tenx.read_barcodes_file(filename)
-    renamer = tenx.parse_barcode_renamer(barcodes, None)
-    for key, value in renamer.items():
-        assert key == value
-    assert len(renamer) == len(barcodes)
-
-    renamer = tenx.parse_barcode_renamer(
-        barcodes, utils.get_test_data('10x-example/barcodes_renamer.tsv'))
-    for key, value in renamer.items():
-        assert key in value
-        assert "epithelial_cell" in value
-    assert len(renamer) == len(barcodes)
 
 
 def test_bam_to_temp_fasta():

@@ -82,7 +82,8 @@ def convert(args):
     def write_to_barcode_meta_csv():
         """ Merge all the meta text files for each barcode to
         one csv file with CELL_BARCODE, UMI_COUNT,READ_COUNT"""
-        barcodes_meta_txts = glob.glob("*_meta.txt")
+        barcodes_meta_txts = glob.glob(
+            os.path.join(args.save_intermediate_files, "*_meta.txt"))
 
         with open(args.write_barcode_meta_csv, "w") as fp:
             fp.write("{},{},{}".format(CELL_BARCODE, UMI_COUNT,
@@ -172,26 +173,20 @@ def convert(args):
         logger.info("Found %d unique barcodes", unique_barcodes)
         # Cleaning up to retrieve memory from unused large variables
         del all_fastas
-        umi_filter = True if args.min_umi_per_barcode != 0 else False
-        if umi_filter:
-            func = partial(
-                tenx_utils.filtered_umi_to_fasta,
-                args.save_fastas,
-                args.delimiter,
-                args.write_barcode_meta_csv,
-                args.min_umi_per_barcode)
-        else:
-            func = partial(
-                tenx_utils.unfiltered_umi_to_fasta,
-                args.save_fastas,
-                args.delimiter)
+        func = partial(
+            tenx_utils.barcode_umi_seq_to_fasta,
+            args.save_fastas,
+            args.delimiter,
+            args.write_barcode_meta_csv,
+            args.min_umi_per_barcode,
+            args.save_intermediate_files)
 
         chunksize = calculate_chunksize(unique_barcodes, n_jobs)
 
         logger.info(
             "Pooled %d and chunksize %d mapped for %d lists",
             n_jobs, chunksize, len(all_fastas_sorted))
-
+        logger.info("ALL FASTAS {}".format(all_fastas_sorted))
         list(pool.imap(
             lambda fasta: func(fasta), all_fastas_sorted, chunksize=chunksize))
 
@@ -214,8 +209,9 @@ def convert(args):
                 args.filename, n_jobs, save_intermediate_files)],
             output_fastq_gzip)
 
-        good_barcodes_filename = os.path.join(
-            args.save_intermediate_files, "good_barcodes.tsv")
+        barcodes_with_significant_umi_records_filename = os.path.join(
+            args.save_intermediate_files,
+            "barcodes_with_significant_umi_records.tsv")
         tenx_utils.count_umis_per_cell(
             output_fastq_gzip,
             args.write_barcode_meta_csv,
@@ -224,11 +220,11 @@ def convert(args):
             args.min_umi_per_barcode,
             args.barcodes_file,
             args.rename_10x_barcodes,
-            good_barcodes_filename)
+            barcodes_with_significant_umi_records_filename)
 
-        tenx_utils.make_per_cell_fastas(
+        tenx_utils.make_per_cell_fastqs(
             output_fastq_gzip,
-            good_barcodes_filename,
+            barcodes_with_significant_umi_records_filename,
             args.save_fastas,
             args.cell_barcode_pattern,
             n_jobs)
