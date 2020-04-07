@@ -3,10 +3,45 @@ import itertools
 import os
 import tempfile
 
+import pandas as pd
 import pysam as bs
+import pytest
+import screed
 
 import bam2fasta.tenx_utils as tenx
+import bam2fasta.bam2fasta_args as bam2fasta_args
 from bam2fasta.tests import bam2fasta_tst_utils as utils
+
+
+@pytest.fixture()
+def umis():
+    return [
+        'GCCGTACGGC', 'GGTCGTGGAT', 'ATGTAATAGT', 'ACCGAACGAA', 'CATAACAATA',
+        'CCGAGAACCA', 'GGACGGTTTT', 'CATTGCAAGT', 'GGCGCGGCAC', 'GACTAAACTG',
+        'TACAACCACG', 'AGGAGGTCTT', 'TGCTAGGAGG', 'GCAAATGGAT', 'CCTAGAACCT',
+        'AGCGGCCCAC', 'GCACTCAAGA', 'GACCTTTTAA', 'GTCATCGCTA', 'AATTGACCTG',
+        'TTATCACTCG', 'TTAAGACGGG', 'TGGGTATCCT', 'GCGCCAGAGT', 'GATGTTAATT',
+        'TGTATCCGGC', 'ACTTCTAGGG', 'CAGTCATTTT', 'CAACCTAGCT', 'GTCAAGTGCT',
+        'AGACTATGAA', 'GCACGGAGAC', 'CATAACAATT', 'GGATCGGGAA', 'AATCATGTGG',
+        'AGCGGAAATT', 'TGCATCAAGG', 'ACGAGTCCTA', 'GTCGGCAAAT', 'AGAAAATACG',
+        'AATGCATGGT', 'GGCCAGCATA', 'AGTAAACAGA', 'GCTGGCCGAT', 'TAGAGAGAGT',
+        'AAATGACAAG', 'TACAAATTAA', 'GAACTGGTTG', 'CGGGCAGGGT', 'AAGACTCCTG',
+        'AGAATCAATA', 'CCACTTGCAC', 'ATTACAAATG', 'GGGGCGTCTA', 'CCCAAGACGT',
+        'AAGACCCAGC', 'ACTCAAACTC', 'ACGGGTTAAG', 'CGTATCCACT', 'AAAGAGTCTT',
+        'CGATGTAATG', 'AGGGATCGTG', 'CTAAGTCGCG', 'AGGCACATAT', 'CCACATGCAC',
+        'GGCGTAATAC', 'GCTCAGCCCG', 'ACTGTTGACT']
+
+
+def test_calculate_chunksize():
+    tota_jobs_todo = 100
+    processes = 1
+    obtained = tenx.calculate_chunksize(tota_jobs_todo, processes)
+    assert tota_jobs_todo == obtained
+    tota_jobs_todo = 51
+    processes = 5
+    expected = 11
+    obtained = tenx.calculate_chunksize(tota_jobs_todo, processes)
+    assert expected == obtained
 
 
 def test_iter_split():
@@ -215,8 +250,228 @@ def test_barcode_umi_seq_to_fasta():
             os.path.join(location, "*_bam2fasta.fasta"))
         assert len(fastas) == 1
         meta_txts = glob.glob(
-            os.path.join(os.getcwd(), "*_meta.txt"))
-        assert len(meta_txts) == 8
-        for meta_txt in meta_txts:
-            if os.path.exists(meta_txt):
-                os.unlink(meta_txt)
+            os.path.join(location, "*_meta.txt"))
+        assert len(meta_txts) == 1
+
+
+def test_fastq_unaligned():
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    with utils.TempDirectory() as location:
+        tenx.get_fastq_unaligned(bam_file, 1, location)
+        basename = os.path.basename(bam_file).replace(".bam", "")
+        path = os.path.join(
+            location, "{}__unaligned.fastq.gz".format(basename))
+        assert os.path.exists(path)
+        assert os.path.getsize(path) == 58
+
+
+def test_fastq_aligned():
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    with utils.TempDirectory() as location:
+        tenx.get_fastq_aligned(bam_file, 1, location)
+        basename = os.path.basename(bam_file).replace(".bam", "")
+        path = os.path.join(
+            location, "{}__aligned.fastq.gz".format(basename))
+        assert os.path.exists(path)
+        assert os.path.getsize(path) == 50248
+
+        with screed.open(path) as f:
+            for record_count, record in enumerate(f):
+                assert record != []
+        assert record_count == 1708
+
+
+def test_concatenate_gzip_files():
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    with utils.TempDirectory() as location:
+        input_gz_filenames = [
+            tenx.get_fastq_aligned(bam_file, 1, location),
+            tenx.get_fastq_unaligned(bam_file, 1, location)
+        ]
+        basename = os.path.basename(bam_file).replace(".bam", "")
+
+        path = os.path.join(
+            location, "{}__concatenated.fastq.gz".format(basename))
+        tenx.concatenate_gzip_files(input_gz_filenames, path)
+
+        assert os.path.exists(path)
+        assert os.path.getsize(path) == 50306
+
+        with screed.open(path) as f:
+            for record_count, record in enumerate(f):
+                assert record != []
+        assert record_count == 1708
+
+
+def test_get_cell_barcode():
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    barcodes_file = utils.get_test_data('10x-example/barcodes.tsv')
+    barcodes = tenx.read_barcodes_file(barcodes_file)
+    with utils.TempDirectory() as location:
+        tenx.get_fastq_aligned(bam_file, 1, location)
+        basename = os.path.basename(bam_file).replace(".bam", "")
+        path = os.path.join(
+            location, "{}__aligned.fastq.gz".format(basename))
+        with screed.open(path) as f:
+            for record_count, record in enumerate(f):
+                result = tenx.get_cell_barcode(
+                    record, bam2fasta_args.CELL_BARCODE_PATTERN)
+                if result is not None:
+                    assert result in barcodes
+
+
+def test_get_molecular_barcode(umis):
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    with utils.TempDirectory() as location:
+        tenx.get_fastq_aligned(bam_file, 1, location)
+        basename = os.path.basename(bam_file).replace(".bam", "")
+        path = os.path.join(
+            location, "{}__aligned.fastq.gz".format(basename))
+        with screed.open(path) as f:
+            for record_count, record in enumerate(f):
+                result = tenx.get_molecular_barcode(
+                    record, bam2fasta_args.MOLECULAR_BARCODE_PATTERN)
+                umis.append(result)
+                if result is not None:
+                    assert result in umis
+
+
+def test_get_cell_barcode_umis():
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    barcodes_file = utils.get_test_data('10x-example/barcodes.tsv')
+    barcodes = tenx.read_barcodes_file(barcodes_file)
+    with utils.TempDirectory() as location:
+        tenx.get_fastq_aligned(bam_file, 1, location)
+        basename = os.path.basename(bam_file).replace(".bam", "")
+        path = os.path.join(
+            location, "{}__aligned.fastq.gz".format(basename))
+        barcode_cell_umi_dict = tenx.get_cell_barcode_umis(
+            path,
+            bam2fasta_args.CELL_BARCODE_PATTERN,
+            bam2fasta_args.MOLECULAR_BARCODE_PATTERN)
+        for barcode in list(barcode_cell_umi_dict.keys()):
+            assert barcode in barcodes
+
+
+def test_count_umis_per_cell():
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    barcodes_file = utils.get_test_data('10x-example/barcodes.tsv')
+    rename_10x_barcodes = utils.get_test_data(
+        '10x-example/barcodes_renamer.tsv')
+    with utils.TempDirectory() as location:
+        tenx.get_fastq_aligned(bam_file, 1, location)
+        basename = os.path.basename(bam_file).replace(".bam", "")
+        path = os.path.join(
+            location, "{}__aligned.fastq.gz".format(basename))
+        meta = os.path.join(location, "barcode_umi_meta.csv")
+        good_barcodes = os.path.join(
+            location, "barcodes_with_significant_umi_records.csv")
+        tenx.count_umis_per_cell(
+            path,
+            meta,
+            bam2fasta_args.CELL_BARCODE_PATTERN,
+            bam2fasta_args.MOLECULAR_BARCODE_PATTERN,
+            3,
+            barcodes_file,
+            rename_10x_barcodes,
+            good_barcodes)
+        df = pd.read_csv(meta)
+        df1 = pd.read_csv(good_barcodes)
+        print(df.iloc[:, 0].values)
+        print(df1.iloc[:, 0].values)
+        expected_meta = [15, 2, 2, 5, 4, 6, 2]
+        assert expected_meta == pd.read_csv(meta).iloc[:, 0].values.tolist()
+        expected_good_barcodes = [
+            'lung_epithelial_cell_AAATGCCCAAACTGCT-1',
+            'lung_epithelial_cell_AAATGCCGTGAACCTT-1',
+            'lung_epithelial_cell_AAATGCCAGATAGTCA-1',
+            'human_epithelial_cell_AAACGGGAGGATATAC-1']
+        assert expected_good_barcodes == pd.read_csv(
+            good_barcodes).iloc[:, 0].values.tolist()
+
+
+def test_record_to_fastq_string():
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    with utils.TempDirectory() as location:
+        tenx.get_fastq_aligned(bam_file, 1, location)
+        basename = os.path.basename(bam_file).replace(".bam", "")
+        path = os.path.join(
+            location, "{}__aligned.fastq.gz".format(basename))
+        with screed.open(path) as f:
+            for record_count, record in enumerate(f):
+                result = tenx.record_to_fastq_string(record)
+                expected = (
+                    "@A00111:50:H2H5YDMXX:2:1334:1886:36072\tUB:Z:AGAAAATACG\n" +
+                    "GATTACTTAGTAGCTGTTTACTTAGCAGCACATTTGCAACAGCATCAAAAGCTATGTTACTATAAAATCAGTGCGTGAAGTCTGATTTAC\n")
+                assert expected in result
+                break
+
+
+def test_get_good_cell_barcode_records():
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    barcodes_file = utils.get_test_data('10x-example/barcodes.tsv')
+    barcodes = tenx.read_barcodes_file(barcodes_file)
+    with utils.TempDirectory() as location:
+        tenx.get_fastq_aligned(bam_file, 1, location)
+        basename = os.path.basename(bam_file).replace(".bam", "")
+        path = os.path.join(
+            location, "{}__aligned.fastq.gz".format(basename))
+        barcodes_with_significant_umi_records = \
+            tenx.get_good_cell_barcode_records(
+                path,
+                barcodes,
+                bam2fasta_args.CELL_BARCODE_PATTERN)
+        read_count = 0
+        for barcode, records in barcodes_with_significant_umi_records.items():
+            read_count += len(records)
+            assert barcode in barcodes
+        assert read_count == 1610
+
+
+def test_write_fastq():
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    with utils.TempDirectory() as location:
+        tenx.get_fastq_aligned(bam_file, 1, location)
+        basename = os.path.basename(bam_file).replace(".bam", "")
+        path = os.path.join(
+            location, "{}__aligned.fastq.gz".format(basename))
+        with screed.open(path) as f:
+            records = []
+            for record_count, record in enumerate(f):
+                records.append(record)
+        write_path = os.path.join(location, "result.fastq.gz")
+        tenx.write_fastq(records, write_path)
+        with screed.open(write_path) as f:
+            records_written = []
+            for record_count, record in enumerate(f):
+                records_written.append(record)
+            assert records_written == records
+        write_path = os.path.join(location, "result.fastq")
+        tenx.write_fastq(records, write_path)
+        with screed.open(write_path) as f:
+            records_written = []
+            for record_count, record in enumerate(f):
+                records_written.append(record)
+            assert records_written == records
+
+
+def test_make_per_cell_fastqs():
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    barcodes_file = utils.get_test_data('10x-example/barcodes.tsv')
+    barcodes = tenx.read_barcodes_file(barcodes_file)
+    with utils.TempDirectory() as location:
+        tenx.get_fastq_aligned(bam_file, 1, location)
+        basename = os.path.basename(bam_file).replace(".bam", "")
+        path = os.path.join(
+            location, "{}__aligned.fastq.gz".format(basename))
+        outdir = os.path.join(location, "outdir")
+        tenx.make_per_cell_fastqs(
+            path,
+            barcodes_file,
+            outdir,
+            bam2fasta_args.CELL_BARCODE_PATTERN,
+            2)
+        fastas = glob.glob(os.path.join(outdir, "*.fastq.gz"))
+
+        for fasta in fastas:
+            assert os.path.basename(fasta).replace(".fastq.gz", "") in barcodes

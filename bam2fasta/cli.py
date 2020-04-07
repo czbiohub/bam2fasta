@@ -24,24 +24,6 @@ UMI_COUNT = "UMI_COUNT"
 READ_COUNT = "READ_COUNT"
 
 
-def calculate_chunksize(total_jobs_todo, processes):
-    """
-    Return a generator of strings after
-    splitting a string by the given separator
-
-    sep : str
-        Separator between strings, default one space
-    Returns
-    -------
-    Yields generator of strings after
-    splitting a string by the given separator
-    """
-    chunksize, extra = divmod(total_jobs_todo, processes)
-    if extra:
-        chunksize += 1
-    return chunksize
-
-
 def info(args):
     "Report bam2fasta version + version of installed dependencies."
     parser = Bam2FastaArgumentParser()
@@ -147,7 +129,7 @@ def convert(args):
             save_intermediate_files)
 
         length_sharded_bam_files = len(filenames)
-        chunksize = calculate_chunksize(length_sharded_bam_files,
+        chunksize = tenx_utils.calculate_chunksize(length_sharded_bam_files,
                                         n_jobs)
         pool = multiprocessing.Pool(processes=n_jobs)
         logger.info(
@@ -181,12 +163,11 @@ def convert(args):
             args.min_umi_per_barcode,
             args.save_intermediate_files)
 
-        chunksize = calculate_chunksize(unique_barcodes, n_jobs)
+        chunksize = tenx_utils.calculate_chunksize(unique_barcodes, n_jobs)
 
         logger.info(
             "Pooled %d and chunksize %d mapped for %d lists",
             n_jobs, chunksize, len(all_fastas_sorted))
-        logger.info("ALL FASTAS {}".format(all_fastas_sorted))
         list(pool.imap(
             lambda fasta: func(fasta), all_fastas_sorted, chunksize=chunksize))
 

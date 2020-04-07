@@ -25,6 +25,24 @@ TENX_TAGS = "CB,UB,XC,XM"
 logger = logging.getLogger(__name__)
 
 
+def calculate_chunksize(total_jobs_todo, processes):
+    """
+    Return a generator of strings after
+    splitting a string by the given separator
+
+    sep : str
+        Separator between strings, default one space
+    Returns
+    -------
+    Yields generator of strings after
+    splitting a string by the given separator
+    """
+    chunksize, extra = divmod(total_jobs_todo, processes)
+    if extra:
+        chunksize += 1
+    return chunksize
+
+
 def iter_split(string, sep=None):
     """
     Return a generator of strings after
@@ -113,7 +131,7 @@ def read_barcodes_file(barcode_path):
         List of QC-passing barcodes from 'barcodes.tsv'
     """
     with open(barcode_path) as f:
-        barcodes = np.unique([line.strip() for line in f])
+        barcodes = np.unique([line.strip() for line in f]).tolist()
     return barcodes
 
 
@@ -293,7 +311,7 @@ def barcode_umi_seq_to_fasta(
         delimiter,
         write_barcode_meta_csv,
         min_umi_per_barcode,
-        save_intermediate_files,
+        save_files,
         single_barcode_fastas):
     """
     Writes signature records across fasta files for a unique barcode
@@ -313,15 +331,13 @@ def barcode_umi_seq_to_fasta(
     single_barcode_fastas: str
         comma separated list of fastas belonging to the
         same barcode that were within different bam shards
-    save_intermediate_files: str
+    save_files: str
         Path to save intermediate barcode meta txt files
     """
     # Tracking UMI Counts
     # Iterating through fasta files for single barcode from different
     # fastas
     read_count = 0
-    logger.info("SINGLE ")
-    logger.info(single_barcode_fastas)
     umi_dict = defaultdict(list)
     for fasta in iter_split(single_barcode_fastas, ","):
             # calculate unique umi, sequence counts
@@ -341,7 +357,7 @@ def barcode_umi_seq_to_fasta(
     if write_barcode_meta_csv:
         unique_meta_file = unique_fasta_file.replace(".fasta", "_meta.txt")
         unique_meta_file = os.path.join(
-            save_intermediate_files, unique_meta_file)
+            save_files, unique_meta_file)
         with open(unique_meta_file, "w") as ff:
             ff.write("{} {}".format(umi_count, read_count))
 
@@ -364,7 +380,7 @@ def barcode_umi_seq_to_fasta(
                             umi + "_" + '{:03d}'.format(index), seq))
 
 
-def get_fastq_unaligned(input_bam, n_cpus, save_intermediate_files):
+def get_fastq_unaligned(input_bam, n_cpus, save_files):
     """Get unaligned fastq sequences from bam.
 
     Parameters
@@ -373,7 +389,7 @@ def get_fastq_unaligned(input_bam, n_cpus, save_intermediate_files):
         Name of the bam file
     n_cpus: int
         number of threads to parallelize the bam file conversion across
-    save_intermediate_files: str
+    save_files: str
         Path to save the output bam and fastq.gz file
     Returns
     -------
@@ -382,7 +398,7 @@ def get_fastq_unaligned(input_bam, n_cpus, save_intermediate_files):
     """
     basename = os.path.basename(input_bam)
     converted_bam = basename.replace(".bam", "_conveted.bam")
-    converted_bam = os.path.join(save_intermediate_files, converted_bam)
+    converted_bam = os.path.join(save_files, converted_bam)
     pysam.view(
         input_bam, *["-f4", "-o", converted_bam],
         catch_stdout=False)
@@ -390,7 +406,7 @@ def get_fastq_unaligned(input_bam, n_cpus, save_intermediate_files):
         converted_bam,
         *["--threads", "{}".format(n_cpus), "-T", TENX_TAGS]).encode()
     fastq_gz = os.path.join(
-        save_intermediate_files,
+        save_files,
         "{}__unaligned.fastq.gz".format(basename.replace(".bam", "")))
     output = gzip.open(fastq_gz, 'wb')
     try:
@@ -400,7 +416,7 @@ def get_fastq_unaligned(input_bam, n_cpus, save_intermediate_files):
     return fastq_gz
 
 
-def get_fastq_aligned(input_bam, n_cpus, save_intermediate_files):
+def get_fastq_aligned(input_bam, n_cpus, save_files):
     """Get aligned fastq sequences from bam.
 
     Parameters
@@ -409,7 +425,7 @@ def get_fastq_aligned(input_bam, n_cpus, save_intermediate_files):
         Name of the bam file
     n_cpus: int
         number of threads to parallelize the bam file conversion across
-    save_intermediate_files: str
+    save_files: str
         Path to save the output bam and fastq.gz file
     Returns
     -------
@@ -418,7 +434,7 @@ def get_fastq_aligned(input_bam, n_cpus, save_intermediate_files):
     """
     basename = os.path.basename(input_bam)
     converted_bam = basename.replace(".bam", "_conveted.bam")
-    converted_bam = os.path.join(save_intermediate_files, converted_bam)
+    converted_bam = os.path.join(save_files, converted_bam)
     pysam.view(
         input_bam, *["-ub", "-F", "256", "-q", "255", "-o", converted_bam],
         catch_stdout=False)
@@ -426,7 +442,7 @@ def get_fastq_aligned(input_bam, n_cpus, save_intermediate_files):
         converted_bam,
         *["--threads", "{}".format(n_cpus), "-T", TENX_TAGS]).encode()
     fastq_gz = os.path.join(
-        save_intermediate_files,
+        save_files,
         "{}__aligned.fastq.gz".format(basename.replace(".bam", "")))
     output = gzip.open(fastq_gz, 'wb')
     try:
@@ -535,8 +551,8 @@ def count_umis_per_cell(
         cell_barcode_pattern,
         molecular_barcode_pattern,
         min_umi_per_cell,
-        barcodes,
-        rename_10x_barcodes,
+        barcodes_file,
+        rename_10x_barcodes_file,
         barcodes_with_significant_umi_records):
     """Writes to csv the barcodes and number of umis, and to good_barcodes the
     barcodes with greater than or equal to min_umi_per_cell
@@ -553,9 +569,9 @@ def count_umis_per_cell(
         molecular barcode pattern to detect in the record name
     min_umi_per_cell: int
         number of minimum umi per cell barcode
-    barcodes: str
+    barcodes_file: str
         csv file containing list of cellular barcode strings
-    rename_10x_barcodes : str
+    rename_10x_barcodes_file: str
         Path to tab-separated file mapping barcodes to their new name
         e.g. with channel or cell annotation label,
         e.g. AAATGCCCAAACTGCT-1    lung_epithelial_cell|AAATGCCCAAACTGCT-1
@@ -573,9 +589,9 @@ def count_umis_per_cell(
         reads,
         cell_barcode_pattern,
         molecular_barcode_pattern)
-    if barcodes is not None:
+    if barcodes_file is not None:
         renamer = parse_barcode_renamer(
-            read_barcodes_file(barcodes), rename_10x_barcodes)
+            read_barcodes_file(barcodes_file), rename_10x_barcodes_file)
         umi_per_barcode = {
             renamer[k]: len(v) for k, v in barcode_counter.items()}
     else:
@@ -599,7 +615,7 @@ def get_good_cell_barcode_records(
     reads : str
         fasta path containing all records/reads
     barcodes_with_significant_umi: list
-        write the valid
+        list of the valid
         barcodes that have greater than or equal to min_umi_per_cell
     cell_barcode_pattern: regex pattern
         cell barcode pattern to detect in the record name
@@ -694,9 +710,16 @@ def make_per_cell_fastqs(
     barcodes_with_significant_umi = read_barcodes_file(
         barcodes_with_significant_umi_file)
 
+    # Parallelize - subset barcodes and give it to each process
     barcodes_with_significant_umi_records = get_good_cell_barcode_records(
         reads, barcodes_with_significant_umi, cell_barcode_pattern)
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    else:
+        logger.info(
+            "Path {} already exists, might be overwriting data".format(outdir))
 
+    # Parallelize - subset barcodes_with_significant_umi_records and save
     for cell_barcode, records in barcodes_with_significant_umi_records.items():
         filename = os.path.join(outdir, cell_barcode + ".fastq.gz")
         write_fastq(records, filename)

@@ -29,18 +29,6 @@ def test_bam2fasta_info_verbose():
     assert "loaded from path" in out
 
 
-def test_calculate_chunksize():
-    tota_jobs_todo = 100
-    processes = 1
-    obtained = cli.calculate_chunksize(tota_jobs_todo, processes)
-    assert tota_jobs_todo == obtained
-    tota_jobs_todo = 51
-    processes = 5
-    expected = 11
-    obtained = cli.calculate_chunksize(tota_jobs_todo, processes)
-    assert expected == obtained
-
-
 def test_run_bam2fasta_supply_all_args():
     with utils.TempDirectory() as location:
         testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
