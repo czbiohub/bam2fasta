@@ -3,10 +3,10 @@ import argparse
 DEFAULT_LINE_COUNT = 1500
 DEFAULT_DELIMITER = "X"
 DEFAULT_PROCESSES = 2
-DEFUALT_MIN_UMI_PER_BARCODE = 0
+DEFAULT_MIN_UMI_PER_BARCODE = 0
 CELL_BARCODE_PATTERN = r'(CB|XC):Z:(.*)[\t]'
 MOLECULAR_BARCODE_PATTERN = '(UB|XB):Z:([ACGT]+)'
-DEFAULT_METHOD = "no_shard"
+DEFAULT_METHOD = "default"
 
 
 class Bam2FastaArgumentParser(argparse.ArgumentParser):
@@ -27,7 +27,7 @@ def create_parser():
     parser.add_argument('--filename', type=str, help="10x bam file")
 
     parser.add_argument(
-        '--min-umi-per-barcode', default=DEFUALT_MIN_UMI_PER_BARCODE, type=int,
+        '--min-umi-per-barcode', default=DEFAULT_MIN_UMI_PER_BARCODE, type=int,
         help="A barcode is only considered a valid barcode read "
         "and its fasta is written if number of umis are greater "
         "than min-umi-per-barcode. It is used to weed out cell barcodes "
@@ -86,6 +86,7 @@ def create_parser():
         required=False)
     parser.add_argument(
         '--method', type=str,
-        help="To use shard & count method,specify shard, by default it doesnt",
+        help="To use shard & count method,specify 'shard',"
+        "by default it runs through the bam file line-by-line",
         required=False, default=DEFAULT_METHOD)
     return parser

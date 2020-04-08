@@ -32,6 +32,15 @@ def umis():
         'GGCGTAATAC', 'GCTCAGCCCG', 'ACTGTTGACT']
 
 
+@pytest.fixture()
+def expected_good_barcodes():
+    return [
+        'AAATGCCCAAACTGCT-1',
+        'AAATGCCGTGAACCTT-1',
+        'AAATGCCAGATAGTCA-1',
+        'AAACGGGAGGATATAC-1']
+
+
 def test_calculate_chunksize():
     tota_jobs_todo = 100
     processes = 1
@@ -273,7 +282,6 @@ def test_fastq_aligned():
         path = os.path.join(
             location, "{}__aligned.fastq.gz".format(basename))
         assert os.path.exists(path)
-        assert os.path.getsize(path) == 50248
 
         with screed.open(path) as f:
             for record_count, record in enumerate(f):
@@ -295,7 +303,6 @@ def test_concatenate_gzip_files():
         tenx.concatenate_gzip_files(input_gz_filenames, path)
 
         assert os.path.exists(path)
-        assert os.path.getsize(path) == 50306
 
         with screed.open(path) as f:
             for record_count, record in enumerate(f):
@@ -353,11 +360,8 @@ def test_get_cell_barcode_umis():
             assert barcode in barcodes
 
 
-def test_count_umis_per_cell():
+def test_count_umis_per_cell(expected_good_barcodes):
     bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
-    barcodes_file = utils.get_test_data('10x-example/barcodes.tsv')
-    rename_10x_barcodes = utils.get_test_data(
-        '10x-example/barcodes_renamer.tsv')
     with utils.TempDirectory() as location:
         tenx.get_fastq_aligned(bam_file, 1, location)
         basename = os.path.basename(bam_file).replace(".bam", "")
@@ -372,20 +376,9 @@ def test_count_umis_per_cell():
             bam2fasta_args.CELL_BARCODE_PATTERN,
             bam2fasta_args.MOLECULAR_BARCODE_PATTERN,
             3,
-            barcodes_file,
-            rename_10x_barcodes,
             good_barcodes)
-        df = pd.read_csv(meta)
-        df1 = pd.read_csv(good_barcodes)
-        print(df.iloc[:, 0].values)
-        print(df1.iloc[:, 0].values)
         expected_meta = [15, 2, 2, 5, 4, 6, 2]
         assert expected_meta == pd.read_csv(meta).iloc[:, 0].values.tolist()
-        expected_good_barcodes = [
-            'lung_epithelial_cell_AAATGCCCAAACTGCT-1',
-            'lung_epithelial_cell_AAATGCCGTGAACCTT-1',
-            'lung_epithelial_cell_AAATGCCAGATAGTCA-1',
-            'human_epithelial_cell_AAACGGGAGGATATAC-1']
         assert expected_good_barcodes == pd.read_csv(
             good_barcodes).iloc[:, 0].values.tolist()
 
@@ -458,6 +451,9 @@ def test_write_fastq():
 def test_make_per_cell_fastqs():
     bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
     barcodes_file = utils.get_test_data('10x-example/barcodes.tsv')
+    rename_10x_barcodes_file = utils.get_test_data(
+        '10x-example/barcodes_renamer.tsv')
+
     barcodes = tenx.read_barcodes_file(barcodes_file)
     with utils.TempDirectory() as location:
         tenx.get_fastq_aligned(bam_file, 1, location)
@@ -468,6 +464,7 @@ def test_make_per_cell_fastqs():
         tenx.make_per_cell_fastqs(
             path,
             barcodes_file,
+            None,
             outdir,
             bam2fasta_args.CELL_BARCODE_PATTERN,
             2)
