@@ -401,11 +401,11 @@ def get_fastq_unaligned(input_bam, n_cpus, save_files):
     basename = os.path.basename(input_bam)
     converted_bam = basename.replace(".bam", "_conveted.bam")
     converted_bam = os.path.join(save_files, converted_bam)
-    # rmdup_bam = basename.replace(".bam", "_rmdup.bam")
-    # rmdup_bam = os.path.join(save_files, rmdup_bam)
-    # pysam.rmdup("-S", input_bam, rmdup_bam)
+    rmdup_bam = basename.replace(".bam", "_rmdup.bam")
+    rmdup_bam = os.path.join(save_files, rmdup_bam)
+    pysam.rmdup("-S", input_bam, rmdup_bam)
     pysam.view(
-        input_bam, *["-f4", "-o", converted_bam],
+        rmdup_bam, *["-f4", "-o", converted_bam],
         catch_stdout=False)
     fastq = pysam.fastq(
         converted_bam,
@@ -440,11 +440,11 @@ def get_fastq_aligned(input_bam, n_cpus, save_files):
     basename = os.path.basename(input_bam)
     converted_bam = basename.replace(".bam", "_conveted.bam")
     converted_bam = os.path.join(save_files, converted_bam)
-    # rmdup_bam = basename.replace(".bam", "_rmdup.bam")
-    # rmdup_bam = os.path.join(save_files, rmdup_bam)
-    # pysam.rmdup("-S", input_bam, rmdup_bam)
+    rmdup_bam = basename.replace(".bam", "_rmdup.bam")
+    rmdup_bam = os.path.join(save_files, rmdup_bam)
+    pysam.rmdup("-S", input_bam, rmdup_bam)
     pysam.view(
-        input_bam, *["-ub", "-o", converted_bam],
+        rmdup_bam, *["-ub", "-F", "256", "-q", "255", "-o", converted_bam],
         catch_stdout=False)
     fastq = pysam.fastq(
         converted_bam,
