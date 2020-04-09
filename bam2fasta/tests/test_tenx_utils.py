@@ -80,7 +80,7 @@ def test_pass_alignment_qc():
 
     total_pass = sum(1 for alignment in bam if
                      tenx.pass_alignment_qc(alignment, barcodes))
-    assert total_pass == 439
+    assert total_pass == 1610
 
 
 def test_pass_alignment_qc_filtered():
@@ -451,8 +451,6 @@ def test_write_fastq():
 def test_make_per_cell_fastqs():
     bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
     barcodes_file = utils.get_test_data('10x-example/barcodes.tsv')
-    rename_10x_barcodes_file = utils.get_test_data(
-        '10x-example/barcodes_renamer.tsv')
 
     barcodes = tenx.read_barcodes_file(barcodes_file)
     with utils.TempDirectory() as location:

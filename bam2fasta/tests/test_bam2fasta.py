@@ -121,3 +121,54 @@ def test_run_convert_no_shard():
 
         barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
         assert len(barcodes) == 8
+
+
+def test_run_convert_nonzero_umi():
+    with utils.TempDirectory() as location:
+        testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+        fastas_dir = os.path.join(location)
+        if not os.path.exists(fastas_dir):
+            os.makedirs(fastas_dir)
+
+        fasta_files = cli.convert(
+            ['--filename', testdata1, '--save-fastas', location,
+             '--min-umi-per-barcode', '10', '--method', 'shard'])
+
+        barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
+        assert len(barcodes) == 1
+        sequences_fasta = []
+        with screed.open(fasta_files[0]) as f:
+            for record in f:
+                sequences_fasta.append(record.sequence)
+        print(len(sequences_fasta))
+        gt_data = utils.get_test_data(
+            '10x-example/groundtruth_fasta_sequences.txt')
+        with open(gt_data, "r") as f:
+            for index, line in enumerate(f.readlines()):
+                assert line.strip() in sequences_fasta, \
+                    "failed at index {}".format(index)
+
+
+def test_run_convert_no_shard_nonzero_umi():
+    with utils.TempDirectory() as location:
+        testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+        fastas_dir = os.path.join(location)
+        if not os.path.exists(fastas_dir):
+            os.makedirs(fastas_dir)
+
+        fasta_files = cli.convert(
+            ['--filename', testdata1, '--save-fastas', location,
+             '--min-umi-per-barcode', '10'])
+
+        barcodes = [
+            filename.replace(".fastq.gz", "") for filename in fasta_files]
+        assert len(barcodes) == 1
+        sequences_fastq = []
+        with screed.open(fasta_files[0]) as f:
+            for record in f:
+                sequences_fastq.append(record.sequence)
+        gt_data = utils.get_test_data(
+            '10x-example/groundtruth_fasta_sequences.txt')
+        with open(gt_data, "r") as f:
+            for index, line in enumerate(f.readlines()):
+                assert line.strip() == sequences_fastq[index]

@@ -86,11 +86,11 @@ def pass_alignment_qc(alignment, barcodes):
         good_cell_barcode = any(
             [alignment.has_tag(cb) for cb in CELL_BARCODES])
     good_molecular_barcode = any([alignment.has_tag(umi) for umi in UMIS])
-    not_duplicate = not alignment.is_duplicate
+    primary = not alignment.is_secondary
 
     pass_qc = (
         high_quality_mapping and good_cell_barcode and
-        good_molecular_barcode and not_duplicate)
+        good_molecular_barcode and primary)
     return pass_qc
 
 
@@ -199,7 +199,7 @@ def shard_bam_file(bam_file_path, chunked_file_line_count, shards_folder):
                 outf.write(alignment)
                 line_count = line_count + 1
         outf.close()
-
+        file_count += 1
     logger.info(
         "time taken to shard the bam file into %d shards is %.5f seconds",
         file_count, time.time() - startt)
@@ -227,14 +227,14 @@ def bam_to_temp_fasta(
     Returns
     -------
     filenames: list
-        one temp fasta filename for one cell's high-quality, non-duplicate
+        one temp fasta filename for one cell's high-quality
         reads
 
     """
     bam = read_bam_file(bam_file)
 
     # Filter out high quality alignments and/or alignments with selected
-    # barcoddes
+    # barcodes
     bam_filtered = (x for x in bam if pass_alignment_qc(x, barcodes))
     if barcode_renamer is not None and barcodes is not None:
         renamer = parse_barcode_renamer(barcodes, barcode_renamer)
@@ -242,31 +242,30 @@ def bam_to_temp_fasta(
         renamer = None
     cell_sequences = defaultdict(str)
 
-    for alignment in bam_filtered:
+    for count, alignment in enumerate(bam_filtered):
         # Get barcode of alignment, looks like "AAATGCCCAAACTGCT-1"
         # a bam file might have good cell barcode as any of the tags in
         # CELL_BARCODES
         for cb in CELL_BARCODES:
             if alignment.has_tag(cb):
                 barcode = alignment.get_tag(cb)
+                break
 
         renamed = renamer[barcode] if renamer is not None else barcode
         umi = ""
         for umi_tag in UMIS:
             if alignment.has_tag(umi_tag):
                 umi = alignment.get_tag(umi_tag)
+                break
         renamed = renamed + delimiter + umi
 
         # Make a long string of all the cell sequences, separated
         # by a non-alphabet letter
         cell_sequences[renamed] += \
-            alignment.query_alignment_sequence + delimiter
-
+            alignment.get_forward_sequence() + delimiter
     filenames = list(set(write_cell_sequences(
         cell_sequences, temp_folder, delimiter)))
-
     bam.close()
-
     return filenames
 
 
@@ -348,6 +347,8 @@ def barcode_umi_seq_to_fasta(
             sequence = record.sequence
             # Appending sequence of a umi to the fasta
             split_seqs = sequence.split(delimiter)
+            if split_seqs[-1] == '':
+                split_seqs = split_seqs[:-1]
             umi_dict[record.name] += split_seqs
             read_count += len(split_seqs)
         # Delete fasta file in tmp folder
@@ -401,11 +402,8 @@ def get_fastq_unaligned(input_bam, n_cpus, save_files):
     basename = os.path.basename(input_bam)
     converted_bam = basename.replace(".bam", "_conveted.bam")
     converted_bam = os.path.join(save_files, converted_bam)
-    rmdup_bam = basename.replace(".bam", "_rmdup.bam")
-    rmdup_bam = os.path.join(save_files, rmdup_bam)
-    pysam.rmdup("-S", input_bam, rmdup_bam)
     pysam.view(
-        rmdup_bam, *["-f4", "-o", converted_bam],
+        input_bam, *["-f4", "-o", converted_bam],
         catch_stdout=False)
     fastq = pysam.fastq(
         converted_bam,
@@ -440,11 +438,8 @@ def get_fastq_aligned(input_bam, n_cpus, save_files):
     basename = os.path.basename(input_bam)
     converted_bam = basename.replace(".bam", "_conveted.bam")
     converted_bam = os.path.join(save_files, converted_bam)
-    rmdup_bam = basename.replace(".bam", "_rmdup.bam")
-    rmdup_bam = os.path.join(save_files, rmdup_bam)
-    pysam.rmdup("-S", input_bam, rmdup_bam)
     pysam.view(
-        rmdup_bam, *["-ub", "-F", "256", "-q", "255", "-o", converted_bam],
+        input_bam, *["-ub", "-F", "256", "-q", "255", "-o", converted_bam],
         catch_stdout=False)
     fastq = pysam.fastq(
         converted_bam,
@@ -515,6 +510,7 @@ def get_molecular_barcode(record,
     """
     found_molecular_barcode = re.findall(molecular_barcode_pattern,
                                          record['name'])
+
     if found_molecular_barcode:
         return found_molecular_barcode[0][1]
 
@@ -549,7 +545,8 @@ def get_cell_barcode_umis(
                 molecular_barcode = get_molecular_barcode(
                     record,
                     molecular_barcode_pattern)
-                barcode_counter[cell_barcode].add(molecular_barcode)
+                if molecular_barcode is not None:
+                    barcode_counter[cell_barcode].add(molecular_barcode)
     return barcode_counter
 
 
@@ -730,7 +727,6 @@ def make_per_cell_fastqs(
     # Parallelize - subset barcodes and give it to each process
     barcodes_with_significant_umi_records = get_good_cell_barcode_records(
         reads, barcodes_with_significant_umi, cell_barcode_pattern)
-    logger.info("{}".format(barcodes_with_significant_umi_records))
 
     # Parallelize - subset barcodes_with_significant_umi_records and save
     for cell_barcode, records in barcodes_with_significant_umi_records.items():
