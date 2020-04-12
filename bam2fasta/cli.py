@@ -81,7 +81,8 @@ def percell(args):
     # Shard bam file to smaller bam file
     logger.info('... reading bam file from %s', args.filename)
     n_jobs = args.processes
-    if args.method == "shard":
+    input_format = os.path.basename(args.filename).split(".")[-1]
+    if args.method == "shard" and input_format == "bam":
         filenames = tenx_utils.shard_bam_file(
             args.filename,
             args.line_count,
@@ -152,17 +153,20 @@ def percell(args):
                 save_intermediate_files, args.write_barcode_meta_csv)
         fastas = glob.glob(os.path.join(save_fastas, "*_bam2fasta.fasta"))
     else:
-        basename = os.path.basename(args.filename)
-        output_fastq_gzip = os.path.join(
-            save_intermediate_files,
-            "{}__concatenated.fastq.gz".format(
-                basename.replace(".bam", "")))
-        tenx_utils.concatenate_gzip_files(
-            [tenx_utils.get_fastq_unaligned(
-                args.filename, n_jobs, save_intermediate_files),
-             tenx_utils.get_fastq_aligned(
-                args.filename, n_jobs, save_intermediate_files)],
-            output_fastq_gzip)
+        if input_format == "bam":
+            basename = os.path.basename(args.filename)
+            output_fastq_gzip = os.path.join(
+                save_intermediate_files,
+                "{}__concatenated.fastq.gz".format(
+                    basename.replace(".bam", "")))
+            tenx_utils.concatenate_gzip_files(
+                [tenx_utils.get_fastq_unaligned(
+                    args.filename, n_jobs, save_intermediate_files),
+                 tenx_utils.get_fastq_aligned(
+                    args.filename, n_jobs, save_intermediate_files)],
+                output_fastq_gzip)
+        elif input_format == "gz":
+            output_fastq_gzip = args.filename
 
         barcodes_with_significant_umi_records_filename = os.path.join(
             save_intermediate_files,

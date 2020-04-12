@@ -174,3 +174,32 @@ def test_run_bam2fasta_percell_no_shard_nonzero_umi():
             for index, line in enumerate(f.readlines()):
                 assert line.strip() in sequences_fastq, \
                     "failed at index {}".format(index)
+
+
+def test_run_bam2fasta_fq_gz_percell_no_shard_nonzero_umi():
+    with utils.TempDirectory() as location:
+        testdata1 = utils.get_test_data(
+            '10x-example/possorted_genome_bam.fastq.gz')
+        fastas_dir = os.path.join(location)
+        if not os.path.exists(fastas_dir):
+            os.makedirs(fastas_dir)
+
+        fasta_files = cli.percell(
+            ['--filename', testdata1, '--save-fastas', location,
+             '--min-umi-per-barcode', '10'])
+        print(fasta_files)
+        barcodes = [
+            filename.replace(".fastq", "") for filename in fasta_files]
+        assert len(barcodes) == 1
+        sequences_fastq = []
+        print(fasta_files)
+        with screed.open(fasta_files[0]) as f:
+            for record in f:
+                sequences_fastq.append(record.sequence)
+        print(sequences_fastq)
+        gt_data = utils.get_test_data(
+            '10x-example/groundtruth_fasta_sequences.txt')
+        with open(gt_data, "r") as f:
+            for index, line in enumerate(f.readlines()):
+                assert line.strip() in sequences_fastq, \
+                    "failed at index {}".format(index)

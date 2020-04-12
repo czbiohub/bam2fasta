@@ -63,7 +63,7 @@ Bam2fasta convert command, it takes BAM and/or barcode files as input. Examples:
 
 
 ### `--bam`
-For bam/10x files, Use this to specify the location of the bam file. For example:
+For bam/10x files, Use this to specify the location of the bam file or tenx.gz file to get per cell fastas/fastqs. For example:
 
 ```bash
 --bam /path/to/data/10x-example/possorted_genome_bam
