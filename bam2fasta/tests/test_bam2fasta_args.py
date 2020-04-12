@@ -39,6 +39,9 @@ def test_bam2fasta_valid_args():
             "processes": bam2fasta_args.DEFAULT_PROCESSES,
             "delimiter": bam2fasta_args.DEFAULT_DELIMITER,
             "line_count": bam2fasta_args.DEFAULT_LINE_COUNT,
+            "method": bam2fasta_args.DEFAULT_METHOD,
+            "cell_barcode_pattern": bam2fasta_args.CELL_BARCODE_PATTERN,
+            "molecular_barcode_pattern": bam2fasta_args.MOLECULAR_BARCODE_PATTERN,
             "save_intermediate_files": save_intermediate_files_dir}
         args = parser.parse_args(args)
         args = vars(args)

@@ -6,7 +6,7 @@ import sys
 import argparse
 import logging
 
-from bam2fasta.cli import convert, info
+from bam2fasta.cli import percell, info
 
 usage = '''
 bam2fasta   <command> [<args>]
@@ -19,14 +19,14 @@ info
 
 def main():
     """Group the bam2fasta commands
-    currently convert, info are the commands under bam2fasta cli tool"""
+    currently percell, info are the commands under bam2fasta cli tool"""
     logging.basicConfig(
         format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s', # noqa
         datefmt='%Y-%m-%d:%H:%M:%S',
         stream=sys.stdout,
         level=logging.INFO)
 
-    commands = {'convert': convert, 'info': info}
+    commands = {'percell': percell, 'info': info}
     parser = argparse.ArgumentParser(
         description='conversion of 10x .bam file to several .fasta files')
     parser.add_argument('command', nargs='?')

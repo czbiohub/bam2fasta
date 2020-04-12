@@ -9,14 +9,42 @@ from collections import defaultdict
 import tempfile
 import time
 
+import glob
+import pysam
+import gzip
+import shutil
+import re
 import screed
 from tqdm import tqdm
+import pandas as pd
 import numpy as np
 
 CELL_BARCODES = ['CB', 'XC']
 UMIS = ['UB', 'XM']
+TENX_TAGS = "CB,UB,XC,XM"
+CELL_BARCODE = "CELL_BARCODE"
+UMI_COUNT = "UMI_COUNT"
+READ_COUNT = "READ_COUNT"
 
 logger = logging.getLogger(__name__)
+
+
+def calculate_chunksize(total_jobs_todo, processes):
+    """
+    Return a generator of strings after
+    splitting a string by the given separator
+
+    sep : str
+        Separator between strings, default one space
+    Returns
+    -------
+    Yields generator of strings after
+    splitting a string by the given separator
+    """
+    chunksize, extra = divmod(total_jobs_todo, processes)
+    if extra:
+        chunksize += 1
+    return chunksize
 
 
 def iter_split(string, sep=None):
@@ -58,11 +86,11 @@ def pass_alignment_qc(alignment, barcodes):
         good_cell_barcode = any(
             [alignment.has_tag(cb) for cb in CELL_BARCODES])
     good_molecular_barcode = any([alignment.has_tag(umi) for umi in UMIS])
-    not_duplicate = not alignment.is_duplicate
+    primary = not alignment.is_secondary
 
     pass_qc = (
         high_quality_mapping and good_cell_barcode and
-        good_molecular_barcode and not_duplicate)
+        good_molecular_barcode and primary)
     return pass_qc
 
 
@@ -87,7 +115,6 @@ def parse_barcode_renamer(barcodes, barcode_renamer):
         with open(barcode_renamer) as f:
             for line in f.readlines():
                 barcode, renamed = line.split()
-                assert barcode in barcodes
                 renamer[barcode] = renamed.replace("|", "_")
     else:
         renamer = dict(zip(barcodes, barcodes))
@@ -107,7 +134,7 @@ def read_barcodes_file(barcode_path):
         List of QC-passing barcodes from 'barcodes.tsv'
     """
     with open(barcode_path) as f:
-        barcodes = np.unique([line.strip() for line in f])
+        barcodes = np.unique([line.strip() for line in f]).tolist()
     return barcodes
 
 
@@ -172,7 +199,7 @@ def shard_bam_file(bam_file_path, chunked_file_line_count, shards_folder):
                 outf.write(alignment)
                 line_count = line_count + 1
         outf.close()
-
+        file_count += 1
     logger.info(
         "time taken to shard the bam file into %d shards is %.5f seconds",
         file_count, time.time() - startt)
@@ -200,14 +227,14 @@ def bam_to_temp_fasta(
     Returns
     -------
     filenames: list
-        one temp fasta filename for one cell's high-quality, non-duplicate
+        one temp fasta filename for one cell's high-quality
         reads
 
     """
     bam = read_bam_file(bam_file)
 
     # Filter out high quality alignments and/or alignments with selected
-    # barcoddes
+    # barcodes
     bam_filtered = (x for x in bam if pass_alignment_qc(x, barcodes))
     if barcode_renamer is not None and barcodes is not None:
         renamer = parse_barcode_renamer(barcodes, barcode_renamer)
@@ -215,47 +242,51 @@ def bam_to_temp_fasta(
         renamer = None
     cell_sequences = defaultdict(str)
 
-    for alignment in bam_filtered:
+    for count, alignment in enumerate(bam_filtered):
         # Get barcode of alignment, looks like "AAATGCCCAAACTGCT-1"
         # a bam file might have good cell barcode as any of the tags in
         # CELL_BARCODES
         for cb in CELL_BARCODES:
             if alignment.has_tag(cb):
                 barcode = alignment.get_tag(cb)
+                break
 
         renamed = renamer[barcode] if renamer is not None else barcode
         umi = ""
         for umi_tag in UMIS:
             if alignment.has_tag(umi_tag):
                 umi = alignment.get_tag(umi_tag)
+                break
         renamed = renamed + delimiter + umi
 
         # Make a long string of all the cell sequences, separated
         # by a non-alphabet letter
         cell_sequences[renamed] += \
-            alignment.query_alignment_sequence + delimiter
-
+            alignment.get_forward_sequence() + delimiter
     filenames = list(set(write_cell_sequences(
         cell_sequences, temp_folder, delimiter)))
-
     bam.close()
-
     return filenames
 
 
 def write_cell_sequences(cell_sequences, temp_folder, delimiter="X"):
     """
     Write each cell's sequences to an individual file
-        Parameters
+
+    Parameters
     ----------
-    cell_sequences: dictionary with a cell and corresponding sequence
-    ithe cell key is expected to contain umi as well
-    separated by the delimiter.
-    else {AAAAAAAAAXACTAG: AGCTACACTA} - In this case AAAAAAAAA would be cell
-    barcode and ACTAG would be umi. The umi will be further used by downstream
-    processing functions appropriately. The barcode is safely returned as the
-    fasta filename and the umi is saved as record.name/sequence id in the
-    fasta file
+    cell_sequences: dict
+        dictionary with a cell and corresponding sequence
+        ithe cell key is expected to contain umi as well
+        separated by the delimiter.
+        else {AAAAAAAAAXACTAG: AGCTACACTA} - In this case
+        AAAAAAAAA would be cell
+        barcode and ACTAG would be umi. The umi will be further
+        used by downstream
+        processing functions appropriately.
+        The barcode is safely returned as the
+        fasta filename and the umi is saved as record.name/sequence id in the
+        fasta file
     delimiter : str, default X
         Used to separate barcode and umi in the cell sequences dict.
     temp_folder: str
@@ -266,10 +297,10 @@ def write_cell_sequences(cell_sequences, temp_folder, delimiter="X"):
     filenames: generator
         one temp fasta filename for one cell/cell_umi with  sequence
     """
-    temp_folder = tempfile.mkdtemp(prefix=temp_folder)
+    barcodes_folder = tempfile.mkdtemp(dir=temp_folder)
     for cell, seq in cell_sequences.items():
         barcode, umi = cell.split(delimiter)
-        filename = os.path.join(temp_folder, barcode + '.fasta')
+        filename = os.path.join(barcodes_folder, barcode + '.fasta')
 
         # Append to an existing barcode file with a different umi
         with open(filename, "a") as f:
@@ -277,119 +308,444 @@ def write_cell_sequences(cell_sequences, temp_folder, delimiter="X"):
         yield filename
 
 
-def unfiltered_umi_to_fasta(
-        save_fastas,
-        delimiter,
-        single_barcode_fastas):
-    """
-    Returns signature records across fasta files for a unique barcode
+def get_fastas_per_unique_barcodes(all_fastas):
+    """ Returns the list of fastas per unique barcodes after building
+    a dictionary with each unique barcode
+    as key and their fasta files from different shards
+
     Parameters
     ----------
-    save_fastas: directory to save the fasta file for the barcode in
-    delimiter: separator between two reads, usually 'X'
-    single_barcode_fastas: comma separated list of fastas belonging to the
-    same barcode that were within different bam shards
+    all_fastas : str
+        list of fastas named by barcodes and separated by commas
+
+    Returns
+    -------
+    Return a list of fastas for all shards per each unique barcode
     """
-    # Getting all fastas for a given barcode
-    # from different shards
-    count = 0
-    # Iterating through fasta files for single barcode from different
-    # fastas
-    for fasta in iter_split(single_barcode_fastas, ","):
-
-        # Initializing the fasta file to write
-        # all the sequences from all bam shards to
-        if count == 0:
-            unique_fasta_file = os.path.basename(fasta)
-            barcode_name = unique_fasta_file.replace(".fasta", "")
-            f = open(os.path.join(
-                save_fastas, barcode_name + "_bam2fasta.fasta"), "w")
-
-        # Add sequence
-        for record in screed.open(fasta):
-            sequence = record.sequence
-            umi = record.name
-
-            split_seqs = sequence.split(delimiter)
-            for index, seq in enumerate(split_seqs):
-                if seq == "":
-                    continue
-                f.write(">{}\n{}\n".format(
-                    barcode_name + "_" + umi + "_" + '{:03d}'.format(
-                        index), seq))
-
-        # Delete fasta file in tmp folder
-        if os.path.exists(fasta):
-            os.unlink(fasta)
-
-        count += 1
-
-    # close the fasta file
-    f.close()
+    fasta_files_dict = defaultdict(str)
+    for fasta in iter_split(all_fastas, ","):
+        barcode = os.path.basename(fasta).replace(".fasta", "")
+        fasta_files_dict[barcode] += fasta + ","
+    # Find unique barcodes
+    all_fastas_sorted = list(fasta_files_dict.values())
+    all_fastas_sorted.sort()
+    del fasta_files_dict
+    return all_fastas_sorted
 
 
-def filtered_umi_to_fasta(
+def barcode_umi_seq_to_fasta(
         save_fastas,
         delimiter,
         write_barcode_meta_csv,
         min_umi_per_barcode,
+        save_files,
         single_barcode_fastas):
     """
-    Returns signature records across fasta files for a unique barcode
+    Writes signature records across fasta files for a unique barcode
     Parameters
     ----------
-    save_fastas: directory to save the fasta file for the barcode in
-    delimiter: separator between two reads, usually 'X'
-    write_barcode_meta_csv: boolean flag, if true
-    Metadata per barcode i.e umi count and read count is written
-    {barcode}_meta.txt file
-    min_umi_per_barcode: Cell barcodes that have less than min_umi_per_barcode
-    are ignored
-    single_barcode_fastas: comma separated list of fastas belonging to the
-    same barcode that were within different bam shards
+    save_fastas: str
+        directory to save the fasta file for the unique barcodes in
+    delimiter: str
+        separator between two reads, usually 'X'
+    write_barcode_meta_csv: bool
+        boolean flag, if true
+        Metadata per barcode i.e umi count and read count is written
+        {barcode}_meta.txt file
+    min_umi_per_barcode: int
+        Cell barcodes that have less than min_umi_per_barcode
+        are ignored
+    single_barcode_fastas: str
+        comma separated list of fastas belonging to the
+        same barcode that were within different bam shards
+    save_files: str
+        Path to save intermediate barcode meta txt files
     """
     # Tracking UMI Counts
-    umis = []
-    all_split_seqs = []
     # Iterating through fasta files for single barcode from different
     # fastas
-    read_count = 0
-    for fasta in iter_split(single_barcode_fastas, ","):
+    for single_barcode_fasta in single_barcode_fastas:
+        read_count = 0
+        umi_dict = defaultdict(list)
+        for fasta in iter_split(single_barcode_fasta, ","):
             # calculate unique umi, sequence counts
-        for record in screed.open(fasta):
-            sequence = record.sequence
-            umi = record.name
+            for record in screed.open(fasta):
+                sequence = record.sequence
+                # Appending sequence of a umi to the fasta
+                split_seqs = sequence.split(delimiter)
+                if split_seqs[-1] == '':
+                    split_seqs = split_seqs[:-1]
+                umi_dict[record.name] += split_seqs
+                read_count += len(split_seqs)
+            # Write umi count, read count per barcode into a metadata file
+            unique_fasta_file = os.path.basename(fasta)
+            umi_count = len(umi_dict)
+            if write_barcode_meta_csv:
+                unique_meta_file = unique_fasta_file.replace(
+                    ".fasta", "_meta.txt")
+                unique_meta_file = os.path.join(
+                    save_files, unique_meta_file)
+                with open(unique_meta_file, "w") as ff:
+                    ff.write("{} {}".format(umi_count, read_count))
 
-            # Appending sequence of a umi to the fasta
-            split_seqs = sequence.split(delimiter)
-            all_split_seqs.append(split_seqs)
-            umis.append(umi)
-            read_count += len(split_seqs)
-        # Delete fasta file in tmp folder
-        if os.path.exists(fasta):
-            os.unlink(fasta)
+            # If umi count is greater than min_umi_per_barcode
+            # write the sequences
+            # collected to fasta file for barcode named as
+            # barcode_bam2fasta.fasta
+            # print(fasta, umi_count, read_count, unique_fasta_file)
+            if umi_count > min_umi_per_barcode:
+                barcode_name = unique_fasta_file.replace(".fasta", "")
+                with open(
+                    os.path.join(
+                        save_fastas,
+                        barcode_name + "_bam2fasta.fasta"), "w") as f:
+                    for umi, seqs in umi_dict.items():
+                        for index, seq in enumerate(seqs):
+                            if seq == "":
+                                continue
+                            f.write(
+                                ">{}\n{}\n".format(
+                                    barcode_name + "_" +
+                                    umi + "_" + '{:03d}'.format(index), seq))
 
-    # Write umi count, read count per barcode into a metadata file
-    unique_fasta_file = os.path.basename(fasta)
-    umi_count = len(umis)
-    if write_barcode_meta_csv:
-        unique_meta_file = unique_fasta_file.replace(".fasta", "_meta.txt")
-        with open(unique_meta_file, "w") as ff:
-            ff.write("{} {}".format(umi_count, read_count))
 
-    # If umi count is greater than min_umi_per_barcode write the sequences
-    # collected to fasta file for the barcode named as barcode_bam2fasta.fasta
-    if umi_count > min_umi_per_barcode:
-        barcode_name = unique_fasta_file.replace(".fasta", "")
-        with open(
-            os.path.join(
-                save_fastas,
-                barcode_name + "_bam2fasta.fasta"), "w") as f:
-            for index, seqs in enumerate(all_split_seqs):
-                for seq in seqs:
-                    if seqs == "":
-                        continue
-                    f.write(
-                        ">{}\n{}\n".format(
-                            barcode_name + "_" +
-                            umis[index] + "_" + '{:03d}'.format(index), seq))
+def write_to_barcode_meta_csv(
+        barcode_meta_folder, write_barcode_meta_csv):
+    """ Merge all the meta text files for each barcode to
+    one csv file with CELL_BARCODE, UMI_COUNT,READ_COUNT
+
+    Parameters
+    ----------
+    barcode_meta_folder : str
+        path to folder containing barcode_meta.txt file for all barcodes
+        named as barcode.txt and containing umi_count, read_count
+    write_barcode_meta_csv : str
+        csv file to write the barcode metadata to
+    Returns
+    -------
+    Write csv file to write the barcode metadata to
+    """
+    barcodes_meta_txts = glob.glob(
+        os.path.join(barcode_meta_folder, "*_meta.txt"))
+    with open(write_barcode_meta_csv, "w") as fp:
+        fp.write("{},{},{}".format(CELL_BARCODE, UMI_COUNT,
+                                   READ_COUNT))
+        fp.write('\n')
+        for barcode_meta_txt in barcodes_meta_txts:
+            with open(barcode_meta_txt, 'r') as f:
+                umi_count, read_count = f.readline().split()
+                umi_count = int(umi_count)
+                read_count = int(read_count)
+
+                barcode_name = barcode_meta_txt.replace('_meta.txt', '')
+                fp.write("{},{},{}\n".format(barcode_name,
+                                             umi_count,
+                                             read_count))
+            os.unlink(barcode_meta_txt)
+
+
+def get_fastq_unaligned(input_bam, n_cpus, save_files):
+    """Get unaligned fastq sequences from bam.
+
+    Parameters
+    ----------
+    input_bam : str
+        Name of the bam file
+    n_cpus: int
+        number of threads to parallelize the bam file conversion across
+    save_files: str
+        Path to save the output bam and fastq.gz file
+    Returns
+    -------
+    fastq_gz : str
+        Path to converted fastq.gz file
+    """
+    basename = os.path.basename(input_bam)
+    converted_bam = basename.replace(".bam", "_conveted.bam")
+    converted_bam = os.path.join(save_files, converted_bam)
+    pysam.view(
+        input_bam, *["-f4", "-o", converted_bam],
+        catch_stdout=False)
+    fastq = pysam.fastq(
+        converted_bam,
+        *["--threads", "{}".format(n_cpus), "-T", TENX_TAGS]).encode()
+    fastq_gz = os.path.join(
+        save_files,
+        "{}__unaligned.fastq.gz".format(basename.replace(".bam", "")))
+    output = gzip.open(fastq_gz, 'wb')
+    try:
+        output.write(fastq)
+    finally:
+        output.close()
+    return fastq_gz
+
+
+def get_fastq_aligned(input_bam, n_cpus, save_files):
+    """Get aligned fastq sequences from bam.
+
+    Parameters
+    ----------
+    input_bam : str
+        Name of the bam file
+    n_cpus: int
+        number of threads to parallelize the bam file conversion across
+    save_files: str
+        Path to save the output bam and fastq.gz file
+    Returns
+    -------
+    fastq_gz : str
+        Path to converted fastq.gz file
+    """
+    basename = os.path.basename(input_bam)
+    converted_bam = basename.replace(".bam", "_conveted.bam")
+    converted_bam = os.path.join(save_files, converted_bam)
+    pysam.view(
+        input_bam, *["-ub", "-F", "256", "-q", "255", "-o", converted_bam],
+        catch_stdout=False)
+    fastq = pysam.fastq(
+        converted_bam,
+        *["--threads", "{}".format(n_cpus), "-T", TENX_TAGS]).encode()
+    fastq_gz = os.path.join(
+        save_files,
+        "{}__aligned.fastq.gz".format(basename.replace(".bam", "")))
+    output = gzip.open(fastq_gz, 'wb')
+    try:
+        output.write(fastq)
+    finally:
+        output.close()
+    return fastq_gz
+
+
+def concatenate_gzip_files(input_gz_filenames, output_gz):
+    """Return concatenated gzipped file containing
+       unaligned and aligned fastq sequences from bam.
+
+    Parameters
+    ----------
+    input_gz_filenames : list
+        list of unaligned and aligned fastq sequences
+    Returns
+    -------
+    output_gz : str
+        Path to concatenated fastq.gz file
+    """
+    with open(output_gz, 'wb') as wfp:
+        for fn in input_gz_filenames:
+            with open(fn, 'rb') as rfp:
+                shutil.copyfileobj(rfp, wfp)
+
+
+def get_cell_barcode(record, cell_barcode_pattern):
+    """Return the cell barcode in the record name.
+
+    Parameters
+    ----------
+    record : screed record
+        screed record containing the cell barcode
+    cell_barcode_pattern: regex pattern
+        cell barcode pattern to detect in the record name
+    Returns
+    -------
+    barcode : str
+        Return cell barcode from the name, if it doesn't exit, returns None
+    """
+    found_cell_barcode = re.findall(cell_barcode_pattern, record['name'])
+    if found_cell_barcode:
+        return found_cell_barcode[0][1]
+
+
+def get_molecular_barcode(record,
+                          molecular_barcode_pattern):
+    """Return the molecular barcode in the record name.
+
+    Parameters
+    ----------
+    record : screed record
+        screed record containing the molecular barcode
+    molecular_barcode_pattern: regex pattern
+        molecular barcode pattern to detect in the record name
+    Returns
+    -------
+    barcode : str
+        Return molecular barcode from the name,if it doesn't exit, returns None
+    """
+    found_molecular_barcode = re.findall(molecular_barcode_pattern,
+                                         record['name'])
+
+    if found_molecular_barcode:
+        return found_molecular_barcode[0][1]
+
+
+def get_cell_barcode_umis(
+        reads,
+        cell_barcode_pattern,
+        molecular_barcode_pattern):
+    """Return a dictionary containing cell barcode string and list of
+    corresponding umis as the value
+
+    Parameters
+    ----------
+    reads : str
+        fasta path
+    cell_barcode_pattern: regex pattern
+        cell barcode pattern to detect in the record name
+    molecular_barcode_pattern: regex pattern
+        molecular barcode pattern to detect in the record name
+    Returns
+    -------
+    barcode_counter : dict
+        dictionary containing cell barcode string and list of
+        corresponding umis as the value
+    """
+    barcode_counter = defaultdict(set)
+
+    with screed.open(reads) as f:
+        for record in tqdm(f):
+            cell_barcode = get_cell_barcode(record, cell_barcode_pattern)
+            if cell_barcode is not None:
+                molecular_barcode = get_molecular_barcode(
+                    record,
+                    molecular_barcode_pattern)
+                if molecular_barcode is not None:
+                    barcode_counter[cell_barcode].add(molecular_barcode)
+    return barcode_counter
+
+
+def count_umis_per_cell(
+        reads,
+        csv,
+        cell_barcode_pattern,
+        molecular_barcode_pattern,
+        min_umi_per_cell,
+        barcodes_with_significant_umi_records):
+    """Writes to csv the barcodes and number of umis, and to good_barcodes the
+    barcodes with greater than or equal to min_umi_per_cell
+
+    Parameters
+    ----------
+    reads : str
+        read records from fasta path
+    csv: str
+        file to write barcodes and their corresponding number of umis
+    cell_barcode_pattern: regex pattern
+        cell barcode pattern to detect in the record name
+    molecular_barcode_pattern: regex pattern
+        molecular barcode pattern to detect in the record name
+    min_umi_per_cell: int
+        number of minimum umi per cell barcode
+    barcodes_with_significant_umi_records: str
+        write the valid
+        barcodes that have greater than or equal to min_umi_per_cell
+    Returns
+    -------
+    Writes to csv barcodes and their corresponding number of umis
+    Writes to barcodes_with_significant_umi_records
+    list of the barcodes that have
+    greater than or equal to min_umi_per_cell
+    """
+    barcode_counter = get_cell_barcode_umis(
+        reads,
+        cell_barcode_pattern,
+        molecular_barcode_pattern)
+    umi_per_barcode = {
+        k: len(v) for k, v in barcode_counter.items()}
+    series = pd.Series(umi_per_barcode)
+    series.to_csv(csv, header=False, index=False)
+
+    filtered = pd.Series(series[series >= min_umi_per_cell].index)
+    filtered.to_csv(
+        barcodes_with_significant_umi_records, header=False, index=False)
+
+
+def record_to_fastq_string(record, record_name=None):
+    """Return the converted fastq string
+
+    Parameters
+    ----------
+    record : screed record
+        record in fasta
+    record_name: str
+        specify if you want to rename the record with a new barcode name
+    Returns
+    -------
+    output : str
+        convert recotd to fastq string
+    """
+    if record_name is None:
+        result = "@{}\n{}\n+\n{}\n".format(
+            record['name'], record['sequence'], record['quality'])
+    else:
+        result = "@{}\n{}\n+\n{}\n".format(
+            record_name, record['sequence'], record['quality'])
+    return result
+
+
+def write_fastq(records, filename, record_name=None):
+    """Write fastq strings converted records to filename
+
+    Parameters
+    ----------
+    records : list
+        list of screed records
+    filename : str
+        Path to .fastq string to write to
+    record_name: str
+        specify if you want to rename the record with a new barcode name
+    Returns
+    -------
+    Write fastq strings converted records to filename
+    """
+    with open(filename, 'a') as f:
+        f.writelines(record_to_fastq_string(r, record_name) for r in records)
+
+
+def make_per_cell_fastqs(
+        reads,
+        rename_10x_barcodes_file,
+        outdir,
+        cell_barcode_pattern,
+        barcodes_with_significant_umi):
+    """Write the filtered cell barcodes in reads
+    from barcodes_with_significant_umi_file
+    fastq.gzs to outdir
+
+    Parameters
+    ----------
+    reads : str
+        read records from fasta path
+        greater than or equal to min_umi_per_cell
+    rename_10x_barcodes_file: str
+        Path to tab-separated file mapping barcodes to their new name
+        e.g. with channel or cell annotation label,
+        e.g. AAATGCCCAAACTGCT-1    lung_epithelial_cell|AAATGCCCAAACTGCT-1
+    outdir: str
+        write the per cell barcode fastq.gzs to outdir
+    cell_barcode_pattern: regex pattern
+        cell barcode pattern to detect in the record name
+    barcodes_with_significant_umi_file: list
+        list of containing barcodes that have significant umi counts
+    Returns
+    -------
+    Write the filtered cell barcodes in reads
+    from barcodes_with_significant_umi_file
+    fastq.gzs to outdir
+    """
+    outdir = os.path.abspath(outdir)
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    else:
+        logger.info(
+            "Path {} already exists, might be overwriting data".format(outdir))
+
+    renamer = parse_barcode_renamer(
+        barcodes_with_significant_umi, rename_10x_barcodes_file)
+
+    with screed.open(reads) as f:
+        for record in tqdm(f):
+            cell_barcode = get_cell_barcode(record, cell_barcode_pattern)
+            if cell_barcode in barcodes_with_significant_umi:
+                renamed = renamer[cell_barcode]
+                write_fastq(
+                    [record],
+                    os.path.join(outdir, renamed + ".fastq"),
+                    renamed)
