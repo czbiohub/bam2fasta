@@ -339,7 +339,7 @@ def test_fastq_bam_unaligned_zero():
 
 def test_fastq_bam_unaligned_nonzero():
     bam_file = utils.get_test_data(
-        '10x-example/possorted_genome_bam_unaligned.bam')
+        '10x-example/possorted_genome_bam_unaligned_seqs.bam')
     with utils.TempDirectory() as location:
         tenx.get_fastq_unaligned(bam_file, 1, location)
         basename = os.path.basename(bam_file).replace(".bam", "")
