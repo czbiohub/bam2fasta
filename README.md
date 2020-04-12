@@ -49,13 +49,17 @@ Bam2fasta convert command, it takes BAM and/or barcode files as input. Examples:
 * [Main arguments](#main-arguments)
     * [`--filename`](#--filename)
    	* [Bam optional parameters](#bam-optional-parameters)
-        * [`--barcodes-file`](#--barcodes-file)
-        * [`--rename-10x-barcodes`](#--rename-10x-barcodes)
-        * [`--save-fastas`](#--save-fastas)
-        * [`--save-intermediate-files`](#--save-intermediate-files)
         * [`--min-umi-per-barcode`](#--min-umi-per-barcode)
         * [`--write-barcode-meta-csv`](#--write-barcode-meta-csv)
-        * [`--line-count`](#--line-count)
+        * [`--processes`](#--processes)
+        * [`--delimiter`](#--delimiter)
+        * [`--save-fastas`](#--save-fastas)
+        * [`--save-intermediate-files`](#--save-intermediate-files)
+        * [`--cell-barcode-patternt`](#--cell-barcode-pattern)
+        * [`--molecular-barcode-pattern`](#--molecular-barcode-pattern)
+        * [`--barcodes-file`](#--barcodes-file)
+        * [`--rename-10x-barcodes`](#--rename-10x-barcodes)
+        * [`--method`](#--method)
 
 
 ### `--bam`
@@ -132,3 +136,44 @@ The parameter `--line-count` specifies the number of alignments/lines in each ba
 
 * Default: line_count is 1500
   * `--line-count 400`
+
+
+### `--processes`
+The parameter `--processes` specifies the number of cores/processes to parallelize on.
+**Example parameters**
+
+* Default: processes is 2
+  * `--processes 400`
+
+
+### `--delimiter`
+The parameter `--delimiter` specifies delimiter between sequences of the same barcode.
+**Example parameters**
+
+* Default: delimiter is X
+  * `--delimiter X`
+
+
+### `--cell_barcode_pattern`
+The parameter `--cell_barcode_pattern` specifies the regular expressions for molecular barcodes
+**Example parameters**
+
+* Default: cell_barcode_pattern is (CB|XC):Z:
+  * `--cell-barcode-pattern 'CB:Z'`
+
+
+### `--molecular_barcode_pattern`
+The parameter `--molecular_barcode_pattern` specifies the regular expressions for molecular barcodes.
+**Example parameters**
+
+* Default: molecular_barcode_pattern is '(UB|XB):Z:([ACGT]+)'
+  * `--molecular-barcode-pattern 'UB:Z'`
+
+
+### `--method`
+The parameter `--method` specifies the method to convert bam to per cell fastas. options: shard bam file and count umis per cell barcode and make per cell fastqs after filtering or do not shard but convert bam to fastq.gz, count umis per cell barcode and filter barcodes and make per cell fastqs.
+**Example parameters**
+
+* Default: method is default
+  * `--method shard`
+

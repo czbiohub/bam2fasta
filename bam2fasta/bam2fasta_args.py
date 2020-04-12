@@ -67,13 +67,11 @@ def create_parser():
         default=DEFAULT_LINE_COUNT)
     parser.add_argument(
         "--cell-barcode-pattern", type=str,
-        help="Regular expressions for cell barcodes. Default is"
-        " 10x Genomics 'CB:Z' tag",
+        help="Regular expressions for cell barcodes",
         default=CELL_BARCODE_PATTERN)
     parser.add_argument(
         "--molecular-barcode-pattern", type=str,
-        help="Regular expressions for molecular barcodes. "
-             "Default is 10x Genomics 'UB:Z' tag",
+        help="Regular expressions for molecular barcodes.",
         default=MOLECULAR_BARCODE_PATTERN)
     parser.add_argument(
         '--rename-10x-barcodes', type=str,
