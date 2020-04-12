@@ -5,7 +5,7 @@
 import logging
 import itertools
 import os
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 import tempfile
 import time
 
@@ -308,6 +308,31 @@ def write_cell_sequences(cell_sequences, temp_folder, delimiter="X"):
         yield filename
 
 
+def get_fastas_per_unique_barcodes(all_fastas):
+    """ Returns the list of fastas per unique barcodes after building
+    a dictionary with each unique barcode
+    as key and their fasta files from different shards
+
+    Parameters
+    ----------
+    all_fastas : str
+        list of fastas named by barcodes and separated by commas
+
+    Returns
+    -------
+    Return a list of fastas for all shards per each unique barcode
+    """
+    fasta_files_dict = defaultdict(str)
+    for fasta in iter_split(all_fastas, ","):
+        barcode = os.path.basename(fasta).replace(".fasta", "")
+        fasta_files_dict[barcode] += fasta + ","
+    # Find unique barcodes
+    all_fastas_sorted = list(fasta_files_dict.values())
+    all_fastas_sorted.sort()
+    del fasta_files_dict
+    return all_fastas_sorted
+
+
 def barcode_umi_seq_to_fasta(
         save_fastas,
         delimiter,
@@ -320,7 +345,7 @@ def barcode_umi_seq_to_fasta(
     Parameters
     ----------
     save_fastas: str
-        directory to save the fasta file for the barcode in
+        directory to save the fasta file for the unique barcodes in
     delimiter: str
         separator between two reads, usually 'X'
     write_barcode_meta_csv: bool
@@ -339,48 +364,84 @@ def barcode_umi_seq_to_fasta(
     # Tracking UMI Counts
     # Iterating through fasta files for single barcode from different
     # fastas
-    read_count = 0
-    umi_dict = defaultdict(list)
-    for fasta in iter_split(single_barcode_fastas, ","):
+    for single_barcode_fasta in single_barcode_fastas:
+        read_count = 0
+        umi_dict = defaultdict(list)
+        for fasta in iter_split(single_barcode_fasta, ","):
             # calculate unique umi, sequence counts
-        for record in screed.open(fasta):
-            sequence = record.sequence
-            # Appending sequence of a umi to the fasta
-            split_seqs = sequence.split(delimiter)
-            if split_seqs[-1] == '':
-                split_seqs = split_seqs[:-1]
-            umi_dict[record.name] += split_seqs
-            read_count += len(split_seqs)
-        # Delete fasta file in tmp folder
-        if os.path.exists(fasta):
-            os.unlink(fasta)
+            for record in screed.open(fasta):
+                sequence = record.sequence
+                # Appending sequence of a umi to the fasta
+                split_seqs = sequence.split(delimiter)
+                if split_seqs[-1] == '':
+                    split_seqs = split_seqs[:-1]
+                umi_dict[record.name] += split_seqs
+                read_count += len(split_seqs)
+            # Write umi count, read count per barcode into a metadata file
+            unique_fasta_file = os.path.basename(fasta)
+            umi_count = len(umi_dict)
+            if write_barcode_meta_csv:
+                unique_meta_file = unique_fasta_file.replace(
+                    ".fasta", "_meta.txt")
+                unique_meta_file = os.path.join(
+                    save_files, unique_meta_file)
+                with open(unique_meta_file, "w") as ff:
+                    ff.write("{} {}".format(umi_count, read_count))
 
-    # Write umi count, read count per barcode into a metadata file
-    unique_fasta_file = os.path.basename(fasta)
-    umi_count = len(umi_dict)
-    if write_barcode_meta_csv:
-        unique_meta_file = unique_fasta_file.replace(".fasta", "_meta.txt")
-        unique_meta_file = os.path.join(
-            save_files, unique_meta_file)
-        with open(unique_meta_file, "w") as ff:
-            ff.write("{} {}".format(umi_count, read_count))
+            # If umi count is greater than min_umi_per_barcode
+            # write the sequences
+            # collected to fasta file for barcode named as
+            # barcode_bam2fasta.fasta
+            # print(fasta, umi_count, read_count, unique_fasta_file)
+            if umi_count > min_umi_per_barcode:
+                barcode_name = unique_fasta_file.replace(".fasta", "")
+                with open(
+                    os.path.join(
+                        save_fastas,
+                        barcode_name + "_bam2fasta.fasta"), "w") as f:
+                    for umi, seqs in umi_dict.items():
+                        for index, seq in enumerate(seqs):
+                            if seq == "":
+                                continue
+                            f.write(
+                                ">{}\n{}\n".format(
+                                    barcode_name + "_" +
+                                    umi + "_" + '{:03d}'.format(index), seq))
 
-    # If umi count is greater than min_umi_per_barcode write the sequences
-    # collected to fasta file for the barcode named as barcode_bam2fasta.fasta
-    if umi_count > min_umi_per_barcode:
-        barcode_name = unique_fasta_file.replace(".fasta", "")
-        with open(
-            os.path.join(
-                save_fastas,
-                barcode_name + "_bam2fasta.fasta"), "w") as f:
-            for umi, seqs in umi_dict.items():
-                for index, seq in enumerate(seqs):
-                    if seq == "":
-                        continue
-                    f.write(
-                        ">{}\n{}\n".format(
-                            barcode_name + "_" +
-                            umi + "_" + '{:03d}'.format(index), seq))
+
+def write_to_barcode_meta_csv(
+        barcode_meta_folder, write_barcode_meta_csv):
+    """ Merge all the meta text files for each barcode to
+    one csv file with CELL_BARCODE, UMI_COUNT,READ_COUNT
+
+    Parameters
+    ----------
+    barcode_meta_folder : str
+        path to folder containing barcode_meta.txt file for all barcodes
+        named as barcode.txt and containing umi_count, read_count
+    write_barcode_meta_csv : str
+        csv file to write the barcode metadata to
+    Returns
+    -------
+    Write csv file to write the barcode metadata to
+    """
+    barcodes_meta_txts = glob.glob(
+        os.path.join(barcode_meta_folder, "*_meta.txt"))
+    with open(write_barcode_meta_csv, "w") as fp:
+        fp.write("{},{},{}".format(CELL_BARCODE, UMI_COUNT,
+                                   READ_COUNT))
+        fp.write('\n')
+        for barcode_meta_txt in barcodes_meta_txts:
+            with open(barcode_meta_txt, 'r') as f:
+                umi_count, read_count = f.readline().split()
+                umi_count = int(umi_count)
+                read_count = int(read_count)
+
+                barcode_name = barcode_meta_txt.replace('_meta.txt', '')
+                fp.write("{},{},{}\n".format(barcode_name,
+                                             umi_count,
+                                             read_count))
+            os.unlink(barcode_meta_txt)
 
 
 def get_fastq_unaligned(input_bam, n_cpus, save_files):
@@ -733,42 +794,3 @@ def make_per_cell_fastqs(
         renamed = renamer[cell_barcode]
         write_fastq(
             records, os.path.join(outdir, renamed + ".fastq.gz"), renamed)
-
-
-def write_to_barcode_meta_csv(
-        save_intermediate_files, write_barcode_meta_csv):
-    """ Merge all the meta text files for each barcode to
-    one csv file with CELL_BARCODE, UMI_COUNT,READ_COUNT"""
-    barcodes_meta_txts = glob.glob(
-        os.path.join(save_intermediate_files, "*_meta.txt"))
-
-    with open(write_barcode_meta_csv, "w") as fp:
-        fp.write("{},{},{}".format(CELL_BARCODE, UMI_COUNT,
-                                   READ_COUNT))
-        fp.write('\n')
-        for barcode_meta_txt in barcodes_meta_txts:
-            with open(barcode_meta_txt, 'r') as f:
-                umi_count, read_count = f.readline().split()
-                umi_count = int(umi_count)
-                read_count = int(read_count)
-
-                barcode_name = barcode_meta_txt.replace('_meta.txt', '')
-                fp.write("{},{},{}\n".format(barcode_name,
-                                             umi_count,
-                                             read_count))
-            os.unlink(barcode_meta_txt)
-
-
-def get_unique_barcodes(all_fastas):
-    """ Build a dictionary with each unique barcode as key and
-    their fasta files from different shards """
-    fasta_files_dict = OrderedDict()
-    for fasta in iter_split(all_fastas, ","):
-        barcode = os.path.basename(fasta).replace(".fasta", "")
-        value = fasta_files_dict.get(barcode, "")
-        fasta_files_dict[barcode] = value + fasta + ","
-    # Find unique barcodes
-    all_fastas_sorted = list(fasta_files_dict.values())
-    all_fastas_sorted.sort()
-    del fasta_files_dict
-    return all_fastas_sorted

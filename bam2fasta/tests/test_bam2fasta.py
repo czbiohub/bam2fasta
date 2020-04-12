@@ -44,7 +44,7 @@ def test_run_bam2fasta_supply_all_args():
             os.makedirs(temp_fastas_dir)
 
         status, out, err = utils.run_shell_cmd(
-            'bam2fasta convert --filename ' + testdata1 +
+            'bam2fasta percell --filename ' + testdata1 +
             ' --method shard' +
             ' --min-umi-per-barcode 10' +
             ' --write-barcode-meta-csv ' + csv_path +
@@ -83,7 +83,7 @@ def test_run_bam2fasta_default_args():
             os.makedirs(fastas_dir)
 
         status, out, err = utils.run_shell_cmd(
-            'bam2fasta convert --method shard --filename ' + testdata1,
+            'bam2fasta percell --method shard --filename ' + testdata1,
             in_directory=location)
 
         assert status == 0
@@ -94,14 +94,14 @@ def test_run_bam2fasta_default_args():
         assert len(barcodes) == 8
 
 
-def test_run_convert():
+def test_run_bam2fasta_percell():
     with utils.TempDirectory() as location:
         testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
         fastas_dir = os.path.join(location)
         if not os.path.exists(fastas_dir):
             os.makedirs(fastas_dir)
 
-        fasta_files = cli.convert(
+        fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location,
              '--method', 'shard'])
 
@@ -109,28 +109,28 @@ def test_run_convert():
         assert len(barcodes) == 8
 
 
-def test_run_convert_no_shard():
+def test_run_bam2fasta_percell_no_shard():
     with utils.TempDirectory() as location:
         testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
         fastas_dir = os.path.join(location)
         if not os.path.exists(fastas_dir):
             os.makedirs(fastas_dir)
 
-        fasta_files = cli.convert(
+        fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location])
 
         barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
         assert len(barcodes) == 8
 
 
-def test_run_convert_nonzero_umi():
+def test_run_bam2fasta_percell_nonzero_umi():
     with utils.TempDirectory() as location:
         testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
         fastas_dir = os.path.join(location)
         if not os.path.exists(fastas_dir):
             os.makedirs(fastas_dir)
 
-        fasta_files = cli.convert(
+        fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location,
              '--min-umi-per-barcode', '10', '--method', 'shard'])
 
@@ -140,7 +140,6 @@ def test_run_convert_nonzero_umi():
         with screed.open(fasta_files[0]) as f:
             for record in f:
                 sequences_fasta.append(record.sequence)
-        print(len(sequences_fasta))
         gt_data = utils.get_test_data(
             '10x-example/groundtruth_fasta_sequences.txt')
         with open(gt_data, "r") as f:
@@ -149,14 +148,14 @@ def test_run_convert_nonzero_umi():
                     "failed at index {}".format(index)
 
 
-def test_run_convert_no_shard_nonzero_umi():
+def test_run_bam2fasta_percell_no_shard_nonzero_umi():
     with utils.TempDirectory() as location:
         testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
         fastas_dir = os.path.join(location)
         if not os.path.exists(fastas_dir):
             os.makedirs(fastas_dir)
 
-        fasta_files = cli.convert(
+        fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location,
              '--min-umi-per-barcode', '10'])
 

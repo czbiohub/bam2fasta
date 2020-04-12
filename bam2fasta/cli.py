@@ -1,5 +1,5 @@
 """
-Cli tool to convert 10x bam to fastas
+Cli tool to convert 10x bam to per cell fastas
 """
 import itertools
 import os
@@ -45,8 +45,8 @@ def info(args):
         logger.info('- loaded from path: %s', os.path.dirname(screed.__file__))
 
 
-def convert(args):
-    """Cli tool to convert bam to fasta files"""
+def percell(args):
+    """Cli tool to convert bam to per cell fasta files"""
     parser = create_parser()
     args = parser.parse_args(args)
 
@@ -121,7 +121,8 @@ def convert(args):
         del filenames
         logger.info("Deleted intermediary bam")
 
-        all_fastas_sorted = tenx_utils.get_unique_barcodes(all_fastas)
+        all_fastas_sorted = tenx_utils.get_fastas_per_unique_barcodes(
+            all_fastas)
         unique_barcodes = len(all_fastas_sorted)
         logger.info("Found %d unique barcodes", unique_barcodes)
         # Cleaning up to retrieve memory from unused large variables
@@ -140,7 +141,8 @@ def convert(args):
             "Pooled %d and chunksize %d mapped for %d lists",
             n_jobs, chunksize, len(all_fastas_sorted))
         list(pool.imap(
-            lambda fasta: func(fasta), all_fastas_sorted, chunksize=chunksize))
+            lambda fasta: func([fasta]),
+            all_fastas_sorted, chunksize=chunksize))
 
         pool.close()
         pool.join()

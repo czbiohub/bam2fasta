@@ -37,8 +37,8 @@ Bam2fasta info command:
 
 Bam2fasta convert command, it takes BAM and/or barcode files as input. Examples:
 	
-	bam2fasta convert --filename filename.bam 
-	bam2fasta convert --filename 10x-example/possorted_genome_bam.bam \
+	bam2fasta percell --filename filename.bam 
+	bam2fasta percell --filename 10x-example/possorted_genome_bam.bam \
 		--save-fastas fastas --min-umi-per-barcode 10 \
 		--write-barcode-meta-csv all_barcodes_meta.csv \
 		--barcodes 10x-example/barcodes.tsv \

@@ -217,6 +217,25 @@ def test_write_sequences_umi():
         assert fasta.endswith(".fasta")
 
 
+def test_get_fastas_per_unique_barcodes():
+    filename = utils.get_test_data('10x-example/barcodes.tsv')
+    renamer_filename = utils.get_test_data('10x-example/barcodes_renamer.tsv')
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    barcodes = tenx.read_barcodes_file(filename)
+
+    with utils.TempDirectory() as location:
+
+        all_fastas = tenx.bam_to_temp_fasta(
+            barcodes=barcodes,
+            barcode_renamer=renamer_filename,
+            delimiter="X",
+            bam_file=bam_file,
+            temp_folder=location)
+        all_fastas = ",".join(itertools.chain(all_fastas))
+        fastas_sorted = tenx.get_fastas_per_unique_barcodes(all_fastas)
+        assert len(fastas_sorted) == 8
+
+
 def test_barcode_umi_seq_to_fasta_count_0():
     bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
     with utils.TempDirectory() as location:
@@ -226,16 +245,49 @@ def test_barcode_umi_seq_to_fasta_count_0():
             delimiter="X",
             bam_file=bam_file,
             temp_folder=location)
+        single_barcode_fastas = "," .join(
+            itertools.chain(single_barcode_fastas))
+        all_fastas_sorted = tenx.get_fastas_per_unique_barcodes(
+            single_barcode_fastas)
         tenx.barcode_umi_seq_to_fasta(
             location,
             "X",
             True,
             0,
             location,
-            "," .join(itertools.chain(single_barcode_fastas)))
+            all_fastas_sorted)
         fastas = glob.glob(
             os.path.join(location, "*_bam2fasta.fasta"))
-        assert len(fastas) == 1
+        assert len(fastas) == 8
+
+
+def test_write_to_barcode_meta_csv():
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    with utils.TempDirectory() as location:
+        single_barcode_fastas = tenx.bam_to_temp_fasta(
+            barcodes=None,
+            barcode_renamer=None,
+            delimiter="X",
+            bam_file=bam_file,
+            temp_folder=location)
+        single_barcode_fastas = "," .join(
+            itertools.chain(single_barcode_fastas))
+        all_fastas_sorted = tenx.get_fastas_per_unique_barcodes(
+            single_barcode_fastas)
+        tenx.barcode_umi_seq_to_fasta(
+            location,
+            "X",
+            True,
+            0,
+            location,
+            all_fastas_sorted)
+        csv = os.path.join(location, "meta.csv")
+        tenx.write_to_barcode_meta_csv(location, csv)
+        umi_counts = [6, 5, 15, 6, 2, 2, 2, 4]
+        read_counts = [312, 153, 594, 251, 68, 36, 2, 194]
+        for index, row in pd.read_csv(csv).iterrows():
+            assert umi_counts[index] == row[tenx.UMI_COUNT]
+            assert read_counts[index] == row[tenx.READ_COUNT]
 
 
 def test_barcode_umi_seq_to_fasta():
@@ -247,20 +299,25 @@ def test_barcode_umi_seq_to_fasta():
             delimiter="X",
             bam_file=bam_file,
             temp_folder=location)
-
+        single_barcode_fastas = "," .join(
+            itertools.chain(single_barcode_fastas))
+        print(single_barcode_fastas)
+        all_fastas_sorted = tenx.get_fastas_per_unique_barcodes(
+            single_barcode_fastas)
+        print(all_fastas_sorted)
         tenx.barcode_umi_seq_to_fasta(
             location,
             "X",
             True,
             10,
             location,
-            "," .join(itertools.chain(single_barcode_fastas)))
+            all_fastas_sorted)
         fastas = glob.glob(
             os.path.join(location, "*_bam2fasta.fasta"))
         assert len(fastas) == 1
         meta_txts = glob.glob(
             os.path.join(location, "*_meta.txt"))
-        assert len(meta_txts) == 1
+        assert len(meta_txts) == 8
 
 
 def test_fastq_unaligned():
