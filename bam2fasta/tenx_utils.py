@@ -617,7 +617,7 @@ def count_umis_per_cell(
         cell_barcode_pattern,
         molecular_barcode_pattern,
         min_umi_per_cell,
-        barcodes_with_significant_umi_records):
+        barcodes_with_significant_umi_records_file):
     """Writes to csv the barcodes and number of umis, and to good_barcodes the
     barcodes with greater than or equal to min_umi_per_cell
 
@@ -633,7 +633,7 @@ def count_umis_per_cell(
         molecular barcode pattern to detect in the record name
     min_umi_per_cell: int
         number of minimum umi per cell barcode
-    barcodes_with_significant_umi_records: str
+    barcodes_with_significant_umi_records_file: str
         write the valid
         barcodes that have greater than or equal to min_umi_per_cell
     Returns
@@ -654,7 +654,7 @@ def count_umis_per_cell(
 
     filtered = pd.Series(series[series >= min_umi_per_cell].index)
     filtered.to_csv(
-        barcodes_with_significant_umi_records, header=False, index=False)
+        barcodes_with_significant_umi_records_file, header=False, index=False)
 
 
 def record_to_fastq_string(record, record_name=None):
@@ -733,9 +733,6 @@ def make_per_cell_fastqs(
     outdir = os.path.abspath(outdir)
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-    else:
-        logger.info(
-            "Path {} already exists, might be overwriting data".format(outdir))
 
     renamer = parse_barcode_renamer(
         barcodes_with_significant_umi, rename_10x_barcodes_file)
