@@ -736,7 +736,7 @@ def write_fastq(records, filename, record_name=None):
         mode = 'w'
 
     with opener(filename, mode) as f:
-        f.writelines([record_to_fastq_string(r, record_name) for r in records])
+        f.writelines(record_to_fastq_string(r, record_name) for r in records)
 
 
 def make_per_cell_fastqs(

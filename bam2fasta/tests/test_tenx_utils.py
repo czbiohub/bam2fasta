@@ -346,7 +346,7 @@ def test_fastq_bam_unaligned_nonzero():
         path = os.path.join(
             location, "{}__unaligned.fastq.gz".format(basename))
         assert os.path.exists(path)
-        assert os.path.getsize(path) == 57309
+        assert os.path.getsize(path) == 57314
         with screed.open(path) as f:
             record_count = 0
             for record in f:
