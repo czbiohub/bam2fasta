@@ -330,6 +330,11 @@ def test_fastq_bam_unaligned_zero():
         assert os.path.exists(path)
         # zero size fastq.gz file has 58bytes as size
         assert os.path.getsize(path) == 58
+        with screed.open(path) as f:
+            record_count = 0
+            for record in f:
+                record_count += 1
+        assert record_count == 0
 
 
 def test_fastq_bam_unaligned_nonzero():
@@ -341,7 +346,12 @@ def test_fastq_bam_unaligned_nonzero():
         path = os.path.join(
             location, "{}__unaligned.fastq.gz".format(basename))
         assert os.path.exists(path)
-        assert os.path.getsize(path) == 26357139
+        assert os.path.getsize(path) == 57309
+        with screed.open(path) as f:
+            record_count = 0
+            for record in f:
+                record_count += 1
+        assert record_count == 1000
 
 
 def test_fastq_aligned():
