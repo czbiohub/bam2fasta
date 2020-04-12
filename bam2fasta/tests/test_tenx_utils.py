@@ -320,7 +320,7 @@ def test_barcode_umi_seq_to_fasta():
         assert len(meta_txts) == 8
 
 
-def test_fastq_unaligned():
+def test_fastq_bam_unaligned_zero():
     bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
     with utils.TempDirectory() as location:
         tenx.get_fastq_unaligned(bam_file, 1, location)
@@ -328,7 +328,20 @@ def test_fastq_unaligned():
         path = os.path.join(
             location, "{}__unaligned.fastq.gz".format(basename))
         assert os.path.exists(path)
+        # zero size fastq.gz file has 58bytes as size
         assert os.path.getsize(path) == 58
+
+
+def test_fastq_bam_unaligned_nonzero():
+    bam_file = utils.get_test_data(
+        '10x-example/possorted_genome_bam_unaligned.bam')
+    with utils.TempDirectory() as location:
+        tenx.get_fastq_unaligned(bam_file, 1, location)
+        basename = os.path.basename(bam_file).replace(".bam", "")
+        path = os.path.join(
+            location, "{}__unaligned.fastq.gz".format(basename))
+        assert os.path.exists(path)
+        assert os.path.getsize(path) == 26357139
 
 
 def test_fastq_aligned():
