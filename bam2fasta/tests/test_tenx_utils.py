@@ -480,27 +480,6 @@ def test_record_to_fastq_string():
                 break
 
 
-def test_get_good_cell_barcode_records():
-    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
-    barcodes_file = utils.get_test_data('10x-example/barcodes.tsv')
-    barcodes = tenx.read_barcodes_file(barcodes_file)
-    with utils.TempDirectory() as location:
-        tenx.get_fastq_aligned(bam_file, 1, location)
-        basename = os.path.basename(bam_file).replace(".bam", "")
-        path = os.path.join(
-            location, "{}__aligned.fastq.gz".format(basename))
-        barcodes_with_significant_umi_records = \
-            tenx.get_good_cell_barcode_records(
-                path,
-                barcodes,
-                bam2fasta_args.CELL_BARCODE_PATTERN)
-        read_count = 0
-        for barcode, records in barcodes_with_significant_umi_records.items():
-            read_count += len(records)
-            assert barcode in barcodes
-        assert read_count == 1610
-
-
 def test_write_fastq():
     bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
     with utils.TempDirectory() as location:
@@ -512,13 +491,6 @@ def test_write_fastq():
             records = []
             for record_count, record in enumerate(f):
                 records.append(record)
-        write_path = os.path.join(location, "result.fastq.gz")
-        tenx.write_fastq(records, write_path)
-        with screed.open(write_path) as f:
-            records_written = []
-            for record_count, record in enumerate(f):
-                records_written.append(record)
-            assert records_written == records
         write_path = os.path.join(location, "result.fastq")
         tenx.write_fastq(records, write_path)
         with screed.open(write_path) as f:
@@ -541,12 +513,11 @@ def test_make_per_cell_fastqs():
         outdir = os.path.join(location, "outdir")
         tenx.make_per_cell_fastqs(
             path,
-            barcodes_file,
             None,
             outdir,
             bam2fasta_args.CELL_BARCODE_PATTERN,
-            2)
-        fastas = glob.glob(os.path.join(outdir, "*.fastq.gz"))
+            tenx.read_barcodes_file(barcodes_file))
+        fastas = glob.glob(os.path.join(outdir, "*.fastq"))
 
         for fasta in fastas:
-            assert os.path.basename(fasta).replace(".fastq.gz", "") in barcodes
+            assert os.path.basename(fasta).replace(".fastq", "") in barcodes

@@ -112,7 +112,7 @@ def percell(args):
         # filtering that would result in a huge list if each barcode
         # is saved as a separate element, hence the string
         all_fastas = "," .join(itertools.chain(*(
-            pool.imap(
+            pool.imap_unordered(
                 lambda x: func(x.encode('utf-8')),
                 filenames, chunksize=chunksize))))
 
@@ -140,7 +140,7 @@ def percell(args):
         logger.info(
             "Pooled %d and chunksize %d mapped for %d lists",
             n_jobs, chunksize, len(all_fastas_sorted))
-        list(pool.imap(
+        list(pool.imap_unordered(
             lambda fasta: func([fasta]),
             all_fastas_sorted, chunksize=chunksize))
 
@@ -175,14 +175,30 @@ def percell(args):
             args.min_umi_per_barcode,
             barcodes_with_significant_umi_records_filename)
 
-        tenx_utils.make_per_cell_fastqs(
+        unique_barcodes = tenx_utils.read_barcodes_file(
+            barcodes_with_significant_umi_records_filename)
+        num_unique_barcodes = len(unique_barcodes)
+        chunksize = tenx_utils.calculate_chunksize(num_unique_barcodes, n_jobs)
+        pool_lists = []
+        for i in range(0, num_unique_barcodes, chunksize):
+            pool_lists.append(unique_barcodes[i: i + chunksize])
+        pool = multiprocessing.Pool(processes=n_jobs)
+        logger.info(
+            "Pooled %d and chunksize %d mapped for %d lists",
+            n_jobs, chunksize, len(pool_lists))
+
+        func = partial(
+            tenx_utils.make_per_cell_fastqs,
             output_fastq_gzip,
-            barcodes_with_significant_umi_records_filename,
             args.rename_10x_barcodes,
             save_fastas,
-            args.cell_barcode_pattern,
-            n_jobs)
-        fastas = glob.glob(os.path.join(save_fastas, "*.fastq.gz"))
+            args.cell_barcode_pattern)
+
+        pool.map(func, pool_lists)
+
+        pool.close()
+        pool.join()
+        fastas = glob.glob(os.path.join(save_fastas, "*.fastq"))
     logger.info(
         "time taken to write %d fastas is %.5f seconds",
         len(fastas), time.time() - startt)

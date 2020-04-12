@@ -657,38 +657,6 @@ def count_umis_per_cell(
         barcodes_with_significant_umi_records, header=False, index=False)
 
 
-def get_good_cell_barcode_records(
-        reads, barcodes_with_significant_umi, cell_barcode_pattern):
-    """Returns dict of barcodes as keys and all the records containing
-        the barcode with significant umis
-
-    Parameters
-    ----------
-    reads : str
-        fasta path containing all records/reads
-    barcodes_with_significant_umi: list
-        list of the valid
-        barcodes that have greater than or equal to min_umi_per_cell
-    cell_barcode_pattern: regex pattern
-        cell barcode pattern to detect in the record name
-
-    Returns
-    -------
-    barcodes_with_significant_umi_records: dict
-        dict of barcodes as keys and all the records containing
-        the barcode with significant umis
-    """
-    barcodes_with_significant_umi_records = defaultdict(list)
-
-    with screed.open(reads) as f:
-        for record in tqdm(f):
-            cell_barcode = get_cell_barcode(record, cell_barcode_pattern)
-            if cell_barcode in barcodes_with_significant_umi:
-                barcodes_with_significant_umi_records[
-                    cell_barcode] += [record]
-    return barcodes_with_significant_umi_records
-
-
 def record_to_fastq_string(record, record_name=None):
     """Return the converted fastq string
 
@@ -727,25 +695,16 @@ def write_fastq(records, filename, record_name=None):
     -------
     Write fastq strings converted records to filename
     """
-    if filename.endswith('gz'):
-        import gzip
-        opener = gzip.open
-        mode = 'wt'
-    else:
-        opener = open
-        mode = 'w'
-
-    with opener(filename, mode) as f:
+    with open(filename, 'a') as f:
         f.writelines(record_to_fastq_string(r, record_name) for r in records)
 
 
 def make_per_cell_fastqs(
         reads,
-        barcodes_with_significant_umi_file,
         rename_10x_barcodes_file,
         outdir,
         cell_barcode_pattern,
-        num_cpus):
+        barcodes_with_significant_umi):
     """Write the filtered cell barcodes in reads
     from barcodes_with_significant_umi_file
     fastq.gzs to outdir
@@ -754,8 +713,6 @@ def make_per_cell_fastqs(
     ----------
     reads : str
         read records from fasta path
-    barcodes_with_significant_umi_file: str
-        csv file containing barcodes that have
         greater than or equal to min_umi_per_cell
     rename_10x_barcodes_file: str
         Path to tab-separated file mapping barcodes to their new name
@@ -765,8 +722,8 @@ def make_per_cell_fastqs(
         write the per cell barcode fastq.gzs to outdir
     cell_barcode_pattern: regex pattern
         cell barcode pattern to detect in the record name
-    num_cpus: int
-        number of cpus to parallelizing writing per barcode fastas to
+    barcodes_with_significant_umi_file: list
+        list of containing barcodes that have significant umi counts
     Returns
     -------
     Write the filtered cell barcodes in reads
@@ -779,18 +736,16 @@ def make_per_cell_fastqs(
     else:
         logger.info(
             "Path {} already exists, might be overwriting data".format(outdir))
-    barcodes_with_significant_umi = read_barcodes_file(
-        barcodes_with_significant_umi_file)
 
     renamer = parse_barcode_renamer(
         barcodes_with_significant_umi, rename_10x_barcodes_file)
 
-    # Parallelize - subset barcodes and give it to each process
-    barcodes_with_significant_umi_records = get_good_cell_barcode_records(
-        reads, barcodes_with_significant_umi, cell_barcode_pattern)
-
-    # Parallelize - subset barcodes_with_significant_umi_records and save
-    for cell_barcode, records in barcodes_with_significant_umi_records.items():
-        renamed = renamer[cell_barcode]
-        write_fastq(
-            records, os.path.join(outdir, renamed + ".fastq.gz"), renamed)
+    with screed.open(reads) as f:
+        for record in tqdm(f):
+            cell_barcode = get_cell_barcode(record, cell_barcode_pattern)
+            if cell_barcode in barcodes_with_significant_umi:
+                renamed = renamer[cell_barcode]
+                write_fastq(
+                    [record],
+                    os.path.join(outdir, renamed + ".fastq"),
+                    renamed)
