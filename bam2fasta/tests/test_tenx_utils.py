@@ -369,27 +369,6 @@ def test_fastq_aligned():
         assert record_count == 1708
 
 
-def test_concatenate_gzip_files():
-    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
-    with utils.TempDirectory() as location:
-        input_gz_filenames = [
-            tenx.get_fastq_aligned(bam_file, 1, location),
-            tenx.get_fastq_unaligned(bam_file, 1, location)
-        ]
-        basename = os.path.basename(bam_file).replace(".bam", "")
-
-        path = os.path.join(
-            location, "{}__concatenated.fastq.gz".format(basename))
-        tenx.concatenate_gzip_files(input_gz_filenames, path)
-
-        assert os.path.exists(path)
-
-        with screed.open(path) as f:
-            for record_count, record in enumerate(f):
-                assert record != []
-        assert record_count == 1708
-
-
 def test_get_cell_barcode():
     bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
     barcodes_file = utils.get_test_data('10x-example/barcodes.tsv')

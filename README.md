@@ -43,7 +43,7 @@ Bam2fasta convert command, it takes BAM and/or barcode files as input. Examples:
 		--write-barcode-meta-csv all_barcodes_meta.csv \
 		--barcodes 10x-example/barcodes.tsv \
 		--rename-10x-barcodes 10x-example/barcodes_renamer.tsv \
-		--line-count 150 \
+		--shard-size 150 \
     --save-intermediate-files intermediate_files
 
 * [Main arguments](#main-arguments)
@@ -130,12 +130,12 @@ The parameter `--min_umi_per_barcode` ensures that a barcode is only considered 
   * `--min-umi-per-barcode 10`
 
 
-### `--line_count`
-The parameter `--line-count` specifies the number of alignments/lines in each bam shard.
+### `--shard_size`
+The parameter `--shard-size` specifies the number of alignments/lines in each bam shard.
 **Example parameters**
 
-* Default: line_count is 1500
-  * `--line-count 400`
+* Default: shard_size is 1500
+  * `--shard-size 400`
 
 
 ### `--processes`
