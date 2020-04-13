@@ -635,6 +635,8 @@ def count_umis_per_cell(
     filtered = pd.Series(series[series >= min_umi_per_cell].index)
     filtered.to_csv(
         barcodes_significant_umis_file, header=False, index=False)
+    logger.info(
+        "wrote good barcodes to {}".format(barcodes_significant_umis_file))
 
 
 def record_to_fastq_string(record, record_name=None):

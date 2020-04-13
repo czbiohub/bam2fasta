@@ -46,9 +46,10 @@ def info(args):
 
 
 def count_umis_percell(args):
-    parser = create_parser()
-    args = parser.parse_args(args)
-    logger.info(args)
+    if type(args) is list:
+        parser = create_parser()
+        args = parser.parse_args(args)
+        logger.info(args)
     tenx_utils.count_umis_per_cell(
         args.filename,
         args.write_barcode_meta_csv,
@@ -59,12 +60,11 @@ def count_umis_percell(args):
 
 
 def make_fastqs_percell(args):
-    parser = create_parser()
-    args = parser.parse_args(args)
-    logger.info(args)
-    logger.info("Args filename {}".format(args.filename))
+    if type(args) is list:
+        parser = create_parser()
+        args = parser.parse_args(args)
+        logger.info(args)
     save_fastas = os.path.abspath(args.save_fastas)
-    logger.info("Save fastas {}".format(save_fastas))
     if not os.path.exists(save_fastas):
         os.makedirs(save_fastas)
     else:
@@ -86,8 +86,16 @@ def make_fastqs_percell(args):
     # and write the fata files per barcode
     n_jobs = args.processes
     num_good_barcodes = len(good_barcodes)
-    chunksize = tenx_utils.calculate_chunksize(
-        num_good_barcodes, n_jobs)
+    if num_good_barcodes == 1:
+        chunksize = 1
+    elif num_good_barcodes == 0:
+        logger.info("No good barcodes to read from")
+        raise AssertionError(
+            "barcodes_significant_umis_file is empty {}".format(
+                args.barcodes_significant_umis_file))
+    else:
+        chunksize = tenx_utils.calculate_chunksize(
+            num_good_barcodes, n_jobs)
     pool_lists = []
     for i in range(0, num_good_barcodes, chunksize):
         pool_lists.append(good_barcodes[i: i + chunksize])
@@ -239,20 +247,21 @@ def percell(args):
             filenames = [args.filename]
         # Check if the good barcodes with significant umis is already given
         barcodes_significant_umis_file = args.barcodes_significant_umis_file
+        logger.info("barcodes_significant_umis_file {}".format(
+            barcodes_significant_umis_file))
         fastas = []
         # For each of the unaligned and aligned fastq.gz files
         for filename in filenames:
-            # Find the good_barcodes file for the aligned sequences and use it
+            # Find the good_barcodes file from the aligned sequences and use it
             # for unaligned.fastq.gz
-            if barcodes_significant_umis_file is None:
+            args.filename = filename
+            if (len(filenames) == 1 or
+                (barcodes_significant_umis_file
+                 is None and "__aligned.fastq.gz" in filename)):
                 args.barcodes_significant_umis_file = os.path.join(
-                    save_intermediate_files,
+                    save_fastas,
                     "barcodes_with_significant_umis.tsv")
                 count_umis_percell(args)
-            else:
-                barcodes_significant_umis_file = \
-                    args.barcodes_significant_umis_file
-            args.filename = filename
             make_fastqs_percell(args)
             logger.info(
                 "time taken to write fastas is %.5f seconds",
