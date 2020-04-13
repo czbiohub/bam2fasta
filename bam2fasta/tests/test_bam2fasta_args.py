@@ -37,6 +37,8 @@ def test_bam2fasta_valid_args():
             "rename_10x_barcodes": renamer_path,
             "save_fastas": fastas_dir,
             "barcodes_significant_umis_file": None,
+            "channel_id": "",
+            "output_format": "fastq",
             "processes": bam2fasta_args.DEFAULT_PROCESSES,
             "delimiter": bam2fasta_args.DEFAULT_DELIMITER,
             "shard_size": bam2fasta_args.DEFAULT_LINE_COUNT,

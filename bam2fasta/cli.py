@@ -65,18 +65,18 @@ def make_fastqs_percell(args):
         args = parser.parse_args(args)
         logger.info(args)
     save_fastas = os.path.abspath(args.save_fastas)
-    if not os.path.exists(save_fastas):
-        os.makedirs(save_fastas)
-    else:
-        logger.info(
-            "Path {} already exists, might be overwriting data".format(
-                save_fastas))
     # Save fasta sequences for aligned and unaligned sequences in
     # separate folders with the following name in save_fastas
     basename_wo_format = os.path.basename(
         args.filename).replace(".fastq.gz", "")
     save_path = os.path.join(
         save_fastas, basename_wo_format + os.sep)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    else:
+        logger.info(
+            "Path {} already exists, might be overwriting data".format(
+                save_path))
     logger.info("Saving fastas at path {}".format(save_path))
     # Get the good barcodes, chunk them to lists
     good_barcodes = tenx_utils.read_barcodes_file(
@@ -111,12 +111,17 @@ def make_fastqs_percell(args):
         args.filename,
         args.rename_10x_barcodes,
         save_path,
+        args.channel_id,
+        args.output_format,
         args.cell_barcode_pattern)
 
     pool.map(func, pool_lists)
     pool.close()
     pool.join()
-    fastqs = glob.glob(os.path.join(save_path, "*.fastq"))
+    logger.info("{}".format(save_path))
+    fastqs = glob.glob(os.path.join(save_path, "*.{}".format(
+        args.output_format)))
+    logger.info("{}".format(fastqs))
     return fastqs
 
 
@@ -270,5 +275,7 @@ def percell(args):
                 args.filename).replace(".fastq.gz", "")
             save_path = os.path.join(
                 save_fastas, basename_wo_format + os.sep)
-            fastas += glob.glob(os.path.join(save_path, "*.fastq"))
+            fastas += glob.glob(os.path.join(save_path, "*.{}".format(
+                args.output_format)))
+            logger.info('fastas in cli {}'.format(fastas))
     return fastas
