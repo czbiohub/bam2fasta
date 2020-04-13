@@ -81,6 +81,8 @@ Bam2fasta make_fastqs_percell command, it takes BAM and/or barcode files as inpu
         * [`--barcodes-file`](#--barcodes-file)
         * [`--rename-10x-barcodes`](#--rename-10x-barcodes)
         * [`--method`](#--method)
+        * [`--output-format`](#--output-format)
+        * [`--channel-id`](#--channel-id)
 
 
 ### `--bam`
@@ -112,9 +114,9 @@ For example:
 If left unspecified, barcodes in bam as given in barcodes_file are not renamed.
 
 
-### `--save_fastas`
+### `--save-fastas`
 
-1. The [save_fastas ](#--save-fastas ) used to save the sequences of each unique barcode in the bam file. By default, they are saved inside working directory to save unique barcodes to files namely {CELL_BARCODE}.fasta. Otherwise absolute path given in save_fastas. 
+1. The [save-fastas ](#--save-fastas ) used to save the sequences of each unique barcode in the bam file. By default, they are saved inside working directory to save unique barcodes to files namely {CELL_BARCODE}.fasta. Otherwise absolute path given in save_fastas. 
 
 
 **Example parameters**
@@ -122,9 +124,9 @@ If left unspecified, barcodes in bam as given in barcodes_file are not renamed.
 * Default: Save fastas in current working directory:
   * `--save-fastas "fastas"`
 
-### `--save_intermediate_files`
+### `--save-intermediate-files`
 
-1. The [save_intermediate_files](#--save-intermediate-files ) used to save the intermediate sharded bams and their corresponding fastas. By default, they are saved inside "/tmp/" and are deleted automatically at the end of the program. Otherwise absolute path given in save_intermediate_files. 
+1. The [save-intermediate-files](#--save-intermediate-files ) used to save the intermediate sharded bams and their corresponding fastas. By default, they are saved inside "/tmp/" and are deleted automatically at the end of the program. Otherwise absolute path given in save_intermediate_files. 
 
 
 **Example parameters**
@@ -133,29 +135,29 @@ If left unspecified, barcodes in bam as given in barcodes_file are not renamed.
   * `--save-intermediate-files "fastas"`
 
 
-### `--write_barcode_meta_csv`
-This creates a CSV containing the number of reads and number of UMIs per barcode, written in a path given by `write_barcode_meta_csv`. This csv file is empty with just header when the min_umi_per_barcode is zero i.e reads and UMIs per barcode are calculated only when the barcodes are filtered based on [min_umi_per_barcode](#--min_umi_per_barcode)
+### `--write-barcode-meta-csv`
+This creates a CSV containing the number of reads and number of UMIs per barcode, written in a path given by `write_barcode_meta_csv`. This csv file is empty with just header when the min-umi-per-barcode is zero i.e reads and UMIs per barcode are calculated only when the barcodes are filtered based on [min-umi-per-barcode](#--min-umi-per-barcode)
 **Example parameters**
 
 * Default: barcode metadata is not saved 
   * `--write-barcode-meta-csv "barcodes_counts.csv"`
 
 
-### `--min_umi_per_barcode`
-The parameter `--min_umi_per_barcode` ensures that a barcode is only considered a valid barcode read and its sketch is written if number of unique molecular identifiers (UMIs, aka molecular barcodes) are greater than the value specified for a barcode.
+### `--min-umi-per-barcode`
+The parameter `--min-umi-per-barcode` ensures that a barcode is only considered a valid barcode read and its sketch is written if number of unique molecular identifiers (UMIs, aka molecular barcodes) are greater than the value specified for a barcode.
 
 **Example parameters**
 
-* Default: min_umi_per_barcode is 0
+* Default: min-umi-per-barcode is 0
 * Set minimum UMI per cellular barcode as 10:
   * `--min-umi-per-barcode 10`
 
 
-### `--shard_size`
+### `--shard-size`
 The parameter `--shard-size` specifies the number of alignments/lines in each bam shard.
 **Example parameters**
 
-* Default: shard_size is 1500
+* Default: shard-size is 1500
   * `--shard-size 400`
 
 
@@ -175,19 +177,19 @@ The parameter `--delimiter` specifies delimiter between sequences of the same ba
   * `--delimiter X`
 
 
-### `--cell_barcode_pattern`
-The parameter `--cell_barcode_pattern` specifies the regular expressions for molecular barcodes
+### `--cell-barcode-pattern`
+The parameter `--cell-barcode-pattern` specifies the regular expressions for molecular barcodes
 **Example parameters**
 
-* Default: cell_barcode_pattern is (CB|XC):Z:
+* Default: cell-barcode-pattern is (CB|XC):Z:
   * `--cell-barcode-pattern 'CB:Z'`
 
 
-### `--molecular_barcode_pattern`
-The parameter `--molecular_barcode_pattern` specifies the regular expressions for molecular barcodes.
+### `--molecular-barcode-pattern`
+The parameter `--molecular-barcode-pattern` specifies the regular expressions for molecular barcodes.
 **Example parameters**
 
-* Default: molecular_barcode_pattern is '(UB|XB):Z:([ACGT]+)'
+* Default: molecular-barcode-pattern is '(UB|XB):Z:([ACGT]+)'
   * `--molecular-barcode-pattern 'UB:Z'`
 
 
@@ -198,3 +200,18 @@ The parameter `--method` specifies the method to convert bam to per cell fastas.
 * Default: method is default
   * `--method shard`
 
+
+### `--channel-id`
+The parameter `--channel-id` specifies the prefix for fastqs or fastq.gzs saved by default method.
+**Example parameters**
+
+* Default: channel-id is ''
+  * `--channel-id 'possorted_aligned'`
+
+
+### `--output-format`
+The parameter `--output-format` specifies the format of output fastq per cell files. it can be either fastq or fastq.gz. This parameter is only valid for default method
+**Example parameters**
+
+* Default: output-format is fastq
+  * `--output-format fastq.gz`

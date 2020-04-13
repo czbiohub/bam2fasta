@@ -97,4 +97,11 @@ def create_parser():
         '--barcodes-significant-umis-file', type=str,
         help="Barcodes file with significant umi count",
         required=False)
+    parser.add_argument(
+        "--channel-id", type=str,
+        help="Output prefix for fastqs", default="", required=False)
+    parser.add_argument(
+        '--output-format', type=str,
+        help="Output prefix for fastqs, can be either fastq or fastq.gz",
+        required=False, default="fastq")
     return parser

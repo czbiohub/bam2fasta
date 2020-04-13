@@ -134,16 +134,13 @@ def test_run_bam2fasta_supply_all_args():
 def test_run_bam2fasta_default_args():
     with utils.TempDirectory() as location:
         testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
-        fastas_dir = os.path.join(location)
-        if not os.path.exists(fastas_dir):
-            os.makedirs(fastas_dir)
 
         status, out, err = utils.run_shell_cmd(
             'bam2fasta percell --method shard --filename ' + testdata1,
             in_directory=location)
 
         assert status == 0
-        fasta_files = os.listdir(fastas_dir)
+        fasta_files = os.listdir(location)
         barcodes = [
             filename.replace(".fasta", "") for
             filename in fasta_files if filename.endswith("_bam2fasta.fasta")]
@@ -153,9 +150,6 @@ def test_run_bam2fasta_default_args():
 def test_run_bam2fasta_percell():
     with utils.TempDirectory() as location:
         testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
-        fastas_dir = os.path.join(location)
-        if not os.path.exists(fastas_dir):
-            os.makedirs(fastas_dir)
 
         fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location,
@@ -168,9 +162,6 @@ def test_run_bam2fasta_percell():
 def test_run_bam2fasta_percell_no_shard():
     with utils.TempDirectory() as location:
         testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
-        fastas_dir = os.path.join(location)
-        if not os.path.exists(fastas_dir):
-            os.makedirs(fastas_dir)
 
         fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location])
@@ -182,9 +173,6 @@ def test_run_bam2fasta_percell_no_shard():
 def test_run_bam2fasta_percell_nonzero_umi():
     with utils.TempDirectory() as location:
         testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
-        fastas_dir = os.path.join(location)
-        if not os.path.exists(fastas_dir):
-            os.makedirs(fastas_dir)
 
         fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location,
@@ -207,13 +195,33 @@ def test_run_bam2fasta_percell_nonzero_umi():
 def test_run_bam2fasta_percell_no_shard_nonzero_umi():
     with utils.TempDirectory() as location:
         testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
-        fastas_dir = os.path.join(location)
-        if not os.path.exists(fastas_dir):
-            os.makedirs(fastas_dir)
+        fasta_files = cli.percell(
+            ['--filename', testdata1, '--save-fastas', location,
+             '--min-umi-per-barcode', '10'])
+        barcodes = [
+            filename.replace(".fastq", "") for filename in fasta_files]
+        assert len(barcodes) == 1
+        sequences_fastq = []
+        with screed.open(fasta_files[0]) as f:
+            for record in f:
+                sequences_fastq.append(record.sequence)
+        gt_data = utils.get_test_data(
+            '10x-example/groundtruth_fasta_sequences.txt')
+        with open(gt_data, "r") as f:
+            for index, line in enumerate(f.readlines()):
+                assert line.strip() in sequences_fastq, \
+                    "failed at index {}".format(index)
+
+
+def test_run_bam2fasta_fq_percell_no_shard_nonzero_umi():
+    with utils.TempDirectory() as location:
+        testdata1 = utils.get_test_data(
+            '10x-example/possorted_genome_bam.fastq.gz')
 
         fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location,
              '--min-umi-per-barcode', '10'])
+        print(fasta_files)
         barcodes = [
             filename.replace(".fastq", "") for filename in fasta_files]
         assert len(barcodes) == 1
@@ -233,15 +241,12 @@ def test_run_bam2fasta_fq_gz_percell_no_shard_nonzero_umi():
     with utils.TempDirectory() as location:
         testdata1 = utils.get_test_data(
             '10x-example/possorted_genome_bam.fastq.gz')
-        fastas_dir = os.path.join(location)
-        if not os.path.exists(fastas_dir):
-            os.makedirs(fastas_dir)
 
         fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location,
-             '--min-umi-per-barcode', '10'])
+             '--min-umi-per-barcode', '10', '--output-format', 'fastq.gz'])
         barcodes = [
-            filename.replace(".fastq", "") for filename in fasta_files]
+            filename.replace(".fastq.gz", "") for filename in fasta_files]
         assert len(barcodes) == 1
         sequences_fastq = []
         with screed.open(fasta_files[0]) as f:

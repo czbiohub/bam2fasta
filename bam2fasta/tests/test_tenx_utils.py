@@ -490,13 +490,45 @@ def test_make_per_cell_fastqs():
         path = os.path.join(
             location, "{}__aligned.fastq.gz".format(basename))
         outdir = os.path.join(location, "outdir")
+        os.makedirs(outdir)
         tenx.make_per_cell_fastqs(
             path,
             None,
             outdir,
+            "",
+            "fastq",
             bam2fasta_args.CELL_BARCODE_PATTERN,
             tenx.read_barcodes_file(barcodes_file))
         fastas = glob.glob(os.path.join(outdir, "*.fastq"))
 
         for fasta in fastas:
-            assert os.path.basename(fasta).replace(".fastq", "") in barcodes
+            assert os.path.basename(
+                fasta).replace(".fastq", "").replace("_", "") in barcodes
+
+
+def test_make_per_cell_fastq_gzs():
+    bam_file = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+    barcodes_file = utils.get_test_data('10x-example/barcodes.tsv')
+
+    barcodes = tenx.read_barcodes_file(barcodes_file)
+    with utils.TempDirectory() as location:
+        tenx.get_fastq_aligned(bam_file, 1, location)
+        basename = os.path.basename(bam_file).replace(".bam", "")
+        path = os.path.join(
+            location, "{}__aligned.fastq.gz".format(basename))
+        outdir = os.path.join(location, "outdir")
+        os.makedirs(outdir)
+        tenx.make_per_cell_fastqs(
+            path,
+            None,
+            outdir,
+            "possorted_aligned",
+            "fastq.gz",
+            bam2fasta_args.CELL_BARCODE_PATTERN,
+            tenx.read_barcodes_file(barcodes_file))
+        fastas = glob.glob(os.path.join(outdir, "*.fastq.gz"))
+
+        for fasta in fastas:
+            fasta_name = os.path.basename(fasta).replace(
+                ".fastq.gz", "").replace("possorted_aligned_", "")
+            assert fasta_name in barcodes

@@ -677,14 +677,24 @@ def write_fastq(records, filename, record_name=None):
     -------
     Write fastq strings converted records to filename
     """
-    with open(filename, 'a') as f:
-        f.writelines(record_to_fastq_string(r, record_name) for r in records)
+    if filename.endswith('gz'):
+        import gzip
+        opener = gzip.open
+        mode = 'at'
+    else:
+        opener = open
+        mode = 'a'
+
+    with opener(filename, mode) as f:
+        f.writelines([record_to_fastq_string(r) for r in records])
 
 
 def make_per_cell_fastqs(
         reads,
         rename_10x_barcodes_file,
         outdir,
+        channel_id,
+        output_format,
         cell_barcode_pattern,
         barcodes_with_significant_umi):
     """Write the filtered cell barcodes in reads
@@ -702,6 +712,10 @@ def make_per_cell_fastqs(
         e.g. AAATGCCCAAACTGCT-1    lung_epithelial_cell|AAATGCCCAAACTGCT-1
     outdir: str
         write the per cell barcode fastq.gzs to outdir
+    channel_id: str
+        prefix to fastq
+    output_format: str
+        format of output files, can be either fastq or fastq.gz
     cell_barcode_pattern: regex pattern
         cell barcode pattern to detect in the record name
     barcodes_with_significant_umi_file: list
@@ -712,12 +726,10 @@ def make_per_cell_fastqs(
     from barcodes_with_significant_umi_file
     fastq.gzs to outdir
     """
-    outdir = os.path.abspath(outdir)
-    if not os.path.exists(outdir):
-        os.makedirs(outdir)
-
     renamer = parse_barcode_renamer(
         barcodes_with_significant_umi, rename_10x_barcodes_file)
+    if channel_id is None:
+        channel_id = ""
 
     with screed.open(reads) as f:
         for record in tqdm(f):
@@ -726,5 +738,8 @@ def make_per_cell_fastqs(
                 renamed = renamer[cell_barcode]
                 write_fastq(
                     [record],
-                    os.path.join(outdir, renamed + ".fastq"),
+                    os.path.join(
+                        outdir,
+                        "{}_".format(channel_id) + renamed + ".{}".format(
+                            output_format)),
                     renamed)
