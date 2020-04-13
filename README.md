@@ -64,6 +64,7 @@ Bam2fasta make_fastqs_percell command, it takes BAM and/or barcode files as inpu
     --min-umi-per-barcode 10 \
     --barcodes-significant-umis-file good_barcodes.csv \
     --barcodes 10x-example/barcodes.tsv \
+    --cell-barcode-pattern 'CB:Z' \
     --rename-10x-barcodes 10x-example/barcodes_renamer.tsv
 
 * [Main arguments](#main-arguments)
