@@ -49,7 +49,7 @@ Bam2fasta percell command, it takes BAM and/or barcode files as input. Examples:
 Bam2fasta count_umis_percell command, it takes fastq.gz file with sequences and barcodes, umis in their read id and counts the umis per cell. Examples:
   
   bam2fasta count_umis_percell --filename filename.fastq.gz 
-  bam2fasta percell --filename 10x-example/possorted_genome_bam.fastq.gz \
+  bam2fasta count_umis_percell --filename 10x-example/possorted_genome_bam.fastq.gz \
     --write-barcode-meta-csv all_barcodes_meta.csv \
     --min-umi-per-barcode 10 \
     --barcodes-significant-umis-file good_barcodes.csv \
