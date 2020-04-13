@@ -1,3 +1,4 @@
+import glob
 import os
 import shutil
 
@@ -29,6 +30,61 @@ def test_bam2fasta_info_verbose():
     assert "loaded from path" in out
 
 
+def test_run_count_umis_percell():
+    with utils.TempDirectory() as location:
+        testdata1 = utils.get_test_data(
+            '10x-example/possorted_genome_bam.fastq.gz')
+        csv_path = os.path.join(location, "all_barcodes_meta.csv")
+        good_barcodes_path = os.path.join(location, "good_barcodes.csv")
+
+        barcodes_path = utils.get_test_data('10x-example/barcodes.tsv')
+        renamer_path = utils.get_test_data('10x-example/barcodes_renamer.tsv')
+
+        status, out, err = utils.run_shell_cmd(
+            'bam2fasta count_umis_percell --filename ' + testdata1 +
+            ' --min-umi-per-barcode 10' +
+            ' --write-barcode-meta-csv ' + csv_path +
+            ' --barcodes-file ' + barcodes_path + ' --rename-10x-barcodes ' +
+            renamer_path + " --processes 1 " +
+            "--barcodes-significant-umis-file " + good_barcodes_path,
+            in_directory=location)
+        assert status == 0
+        with open(csv_path, 'rb') as f:
+            data = [line.split() for line in f]
+        assert len(data) == 8
+        with open(good_barcodes_path, 'rb') as f:
+            data = [line.split() for line in f]
+        assert len(data) == 1
+
+
+def test_run_make_fastqs_percell():
+    with utils.TempDirectory() as location:
+        testdata1 = utils.get_test_data(
+            '10x-example/possorted_genome_bam.fastq.gz')
+        good_barcodes_path = utils.get_test_data(
+            '10x-example/good_barcodes.csv')
+
+        barcodes_path = utils.get_test_data('10x-example/barcodes.tsv')
+        renamer_path = utils.get_test_data('10x-example/barcodes_renamer.tsv')
+        fastas_dir = os.path.join(location, "fastas")
+        if not os.path.exists(fastas_dir):
+            os.makedirs(fastas_dir)
+
+        status, out, err = utils.run_shell_cmd(
+            'bam2fasta make_fastqs_percell --filename ' + testdata1 +
+            ' --barcodes-file ' + barcodes_path + ' --rename-10x-barcodes ' +
+            renamer_path + " --processes 1" +
+            " --barcodes-significant-umis-file " + good_barcodes_path +
+            ' --save-fastas ' + fastas_dir,
+            in_directory=location)
+        assert status == 0
+        fastqs = glob.glob(
+            os.path.join(fastas_dir + os.sep + "possorted_genome_bam",
+                         "*.fastq"),
+            recursive=True)
+        assert len(fastqs) == 1
+
+
 def test_run_bam2fasta_supply_all_args():
     with utils.TempDirectory() as location:
         testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
@@ -49,7 +105,7 @@ def test_run_bam2fasta_supply_all_args():
             ' --min-umi-per-barcode 10' +
             ' --write-barcode-meta-csv ' + csv_path +
             ' --save-intermediate-files ' + temp_fastas_dir +
-            ' --barcodes ' + barcodes_path + ' --rename-10x-barcodes ' +
+            ' --barcodes-file ' + barcodes_path + ' --rename-10x-barcodes ' +
             renamer_path + ' --save-fastas ' + fastas_dir + " --processes 1",
             in_directory=location)
 
@@ -158,16 +214,13 @@ def test_run_bam2fasta_percell_no_shard_nonzero_umi():
         fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location,
              '--min-umi-per-barcode', '10'])
-        print(fasta_files)
         barcodes = [
             filename.replace(".fastq", "") for filename in fasta_files]
         assert len(barcodes) == 1
         sequences_fastq = []
-        print(fasta_files)
         with screed.open(fasta_files[0]) as f:
             for record in f:
                 sequences_fastq.append(record.sequence)
-        print(sequences_fastq)
         gt_data = utils.get_test_data(
             '10x-example/groundtruth_fasta_sequences.txt')
         with open(gt_data, "r") as f:
@@ -187,16 +240,13 @@ def test_run_bam2fasta_fq_gz_percell_no_shard_nonzero_umi():
         fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location,
              '--min-umi-per-barcode', '10'])
-        print(fasta_files)
         barcodes = [
             filename.replace(".fastq", "") for filename in fasta_files]
         assert len(barcodes) == 1
         sequences_fastq = []
-        print(fasta_files)
         with screed.open(fasta_files[0]) as f:
             for record in f:
                 sequences_fastq.append(record.sequence)
-        print(sequences_fastq)
         gt_data = utils.get_test_data(
             '10x-example/groundtruth_fasta_sequences.txt')
         with open(gt_data, "r") as f:

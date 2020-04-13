@@ -45,6 +45,81 @@ def info(args):
         logger.info('- loaded from path: %s', os.path.dirname(screed.__file__))
 
 
+def count_umis_percell(args):
+    if type(args) is list:
+        parser = create_parser()
+        args = parser.parse_args(args)
+        logger.info(args)
+    tenx_utils.count_umis_per_cell(
+        args.filename,
+        args.write_barcode_meta_csv,
+        args.cell_barcode_pattern,
+        args.molecular_barcode_pattern,
+        args.min_umi_per_barcode,
+        args.barcodes_significant_umis_file)
+
+
+def make_fastqs_percell(args):
+    if type(args) is list:
+        parser = create_parser()
+        args = parser.parse_args(args)
+        logger.info(args)
+    save_fastas = os.path.abspath(args.save_fastas)
+    if not os.path.exists(save_fastas):
+        os.makedirs(save_fastas)
+    else:
+        logger.info(
+            "Path {} already exists, might be overwriting data".format(
+                save_fastas))
+    # Save fasta sequences for aligned and unaligned sequences in
+    # separate folders with the following name in save_fastas
+    basename_wo_format = os.path.basename(
+        args.filename).replace(".fastq.gz", "")
+    save_path = os.path.join(
+        save_fastas, basename_wo_format + os.sep)
+    logger.info("Saving fastas at path {}".format(save_path))
+    # Get the good barcodes, chunk them to lists
+    good_barcodes = tenx_utils.read_barcodes_file(
+        args.barcodes_significant_umis_file)
+
+    # Chunk the good barcodes file beforehand to parallely process
+    # and write the fata files per barcode
+    n_jobs = args.processes
+    num_good_barcodes = len(good_barcodes)
+    if num_good_barcodes == 1:
+        chunksize = 1
+    elif num_good_barcodes == 0:
+        logger.info("No good barcodes to read from")
+        raise AssertionError(
+            "barcodes_significant_umis_file is empty {}".format(
+                args.barcodes_significant_umis_file))
+    else:
+        chunksize = tenx_utils.calculate_chunksize(
+            num_good_barcodes, n_jobs)
+    pool_lists = []
+    for i in range(0, num_good_barcodes, chunksize):
+        pool_lists.append(good_barcodes[i: i + chunksize])
+
+    pool = multiprocessing.Pool(processes=n_jobs)
+    logger.info(
+        "Pooled %d and chunksize %d mapped for %d lists",
+        n_jobs, chunksize, len(pool_lists))
+
+    # Multiprocess all the sequences for each barcode in a .fastq file
+    func = partial(
+        tenx_utils.make_per_cell_fastqs,
+        args.filename,
+        args.rename_10x_barcodes,
+        save_path,
+        args.cell_barcode_pattern)
+
+    pool.map(func, pool_lists)
+    pool.close()
+    pool.join()
+    fastqs = glob.glob(os.path.join(save_path, "*.fastq"))
+    return fastqs
+
+
 def percell(args):
     """Cli tool to convert bam to per cell fasta files"""
     parser = create_parser()
@@ -85,7 +160,7 @@ def percell(args):
     if args.method == "shard" and input_format == "bam":
         filenames = tenx_utils.shard_bam_file(
             args.filename,
-            args.line_count,
+            args.shard_size,
             save_intermediate_files)
 
         # Create a per-cell fasta generator of sequences
@@ -128,6 +203,8 @@ def percell(args):
         logger.info("Found %d unique barcodes", unique_barcodes)
         # Cleaning up to retrieve memory from unused large variables
         del all_fastas
+
+        # Gather all barcodes oer umis to one fasta
         func = partial(
             tenx_utils.barcode_umi_seq_to_fasta,
             save_fastas,
@@ -148,62 +225,50 @@ def percell(args):
         pool.close()
         pool.join()
 
+        # Write barcode meta csv
         if args.write_barcode_meta_csv:
             tenx_utils.write_to_barcode_meta_csv(
                 save_intermediate_files, args.write_barcode_meta_csv)
+
+        # Gather all the fastas
         fastas = glob.glob(os.path.join(save_fastas, "*_bam2fasta.fasta"))
     else:
+        # If the input format is bam and the method is default method
+        # i.e no sharding, convert the bam file to get fastq.gz for unaligned
+        # and aligned sequences
         if input_format == "bam":
-            basename = os.path.basename(args.filename)
-            output_fastq_gzip = os.path.join(
-                save_intermediate_files,
-                "{}__concatenated.fastq.gz".format(
-                    basename.replace(".bam", "")))
-            tenx_utils.concatenate_gzip_files(
-                [tenx_utils.get_fastq_unaligned(
-                    args.filename, n_jobs, save_intermediate_files),
-                 tenx_utils.get_fastq_aligned(
-                    args.filename, n_jobs, save_intermediate_files)],
-                output_fastq_gzip)
+            aligned_fastq_gz = tenx_utils.get_fastq_aligned(
+                args.filename, n_jobs, save_intermediate_files)
+            unaligned_fastq_gz = tenx_utils.get_fastq_unaligned(
+                args.filename, n_jobs, save_intermediate_files)
+            filenames = [aligned_fastq_gz, unaligned_fastq_gz]
+        # if the fastq.gz file is already given
         elif input_format == "gz":
-            output_fastq_gzip = args.filename
-
-        barcodes_with_significant_umi_records_filename = os.path.join(
-            save_intermediate_files,
-            "barcodes_with_significant_umi_records.tsv")
-        tenx_utils.count_umis_per_cell(
-            output_fastq_gzip,
-            args.write_barcode_meta_csv,
-            args.cell_barcode_pattern,
-            args.molecular_barcode_pattern,
-            args.min_umi_per_barcode,
-            barcodes_with_significant_umi_records_filename)
-
-        unique_barcodes = tenx_utils.read_barcodes_file(
-            barcodes_with_significant_umi_records_filename)
-        num_unique_barcodes = len(unique_barcodes)
-        chunksize = tenx_utils.calculate_chunksize(num_unique_barcodes, n_jobs)
-        pool_lists = []
-        for i in range(0, num_unique_barcodes, chunksize):
-            pool_lists.append(unique_barcodes[i: i + chunksize])
-        pool = multiprocessing.Pool(processes=n_jobs)
-        logger.info(
-            "Pooled %d and chunksize %d mapped for %d lists",
-            n_jobs, chunksize, len(pool_lists))
-
-        func = partial(
-            tenx_utils.make_per_cell_fastqs,
-            output_fastq_gzip,
-            args.rename_10x_barcodes,
-            save_fastas,
-            args.cell_barcode_pattern)
-
-        pool.map(func, pool_lists)
-
-        pool.close()
-        pool.join()
-        fastas = glob.glob(os.path.join(save_fastas, "*.fastq"))
-    logger.info(
-        "time taken to write %d fastas is %.5f seconds",
-        len(fastas), time.time() - startt)
+            filenames = [args.filename]
+        # Check if the good barcodes with significant umis is already given
+        barcodes_significant_umis_file = args.barcodes_significant_umis_file
+        logger.info("barcodes_significant_umis_file {}".format(
+            barcodes_significant_umis_file))
+        fastas = []
+        # For each of the unaligned and aligned fastq.gz files
+        for filename in filenames:
+            # Find the good_barcodes file from the aligned sequences and use it
+            # for unaligned.fastq.gz
+            args.filename = filename
+            if (len(filenames) == 1 or
+                (barcodes_significant_umis_file
+                 is None and "__aligned.fastq.gz" in filename)):
+                args.barcodes_significant_umis_file = os.path.join(
+                    save_fastas,
+                    "barcodes_with_significant_umis.tsv")
+                count_umis_percell(args)
+            make_fastqs_percell(args)
+            logger.info(
+                "time taken to write fastas is %.5f seconds",
+                time.time() - startt)
+            basename_wo_format = os.path.basename(
+                args.filename).replace(".fastq.gz", "")
+            save_path = os.path.join(
+                save_fastas, basename_wo_format + os.sep)
+            fastas += glob.glob(os.path.join(save_path, "*.fastq"))
     return fastas

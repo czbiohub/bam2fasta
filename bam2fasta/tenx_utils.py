@@ -12,7 +12,6 @@ import time
 import glob
 import pysam
 import gzip
-import shutil
 import re
 import screed
 from tqdm import tqdm
@@ -155,7 +154,7 @@ def read_bam_file(bam_path):
     return pysam.AlignmentFile(bam_path, mode='rb')
 
 
-def shard_bam_file(bam_file_path, chunked_file_line_count, shards_folder):
+def shard_bam_file(bam_file_path, chunked_file_shard_size, shards_folder):
     """Shard QC-pass bam file with the given line count
        and save to shards_folder
 
@@ -163,7 +162,7 @@ def shard_bam_file(bam_file_path, chunked_file_line_count, shards_folder):
     ----------
     bam_file_path : str
         Bam file to shard
-    chunked_file_line_count: int
+    chunked_file_shard_size: int
         number of lines/alignment reads in each sharded bam file
     shards_folder: str
         absolute path to save the sharded bam files to
@@ -180,24 +179,24 @@ def shard_bam_file(bam_file_path, chunked_file_line_count, shards_folder):
     file_names = []
 
     with read_bam_file(bam_file_path) as bam_file:
-        line_count = 0
+        shard_size = 0
         file_count = 0
         header = bam_file.header
         for alignment in tqdm(bam_file):
-            if line_count == 0:
+            if shard_size == 0:
                 file_name = os.path.join(
                     shards_folder,
                     "temp_bam_shard_{}.bam".format(file_count))
                 file_names.append(file_name)
                 outf = pysam.AlignmentFile(file_name, "wb", header=header)
-            if line_count == chunked_file_line_count:
+            if shard_size == chunked_file_shard_size:
                 file_count = file_count + 1
-                line_count = 0
+                shard_size = 0
                 outf.write(alignment)
                 outf.close()
             else:
                 outf.write(alignment)
-                line_count = line_count + 1
+                shard_size = shard_size + 1
         outf.close()
         file_count += 1
     logger.info(
@@ -516,25 +515,6 @@ def get_fastq_aligned(input_bam, n_cpus, save_files):
     return fastq_gz
 
 
-def concatenate_gzip_files(input_gz_filenames, output_gz):
-    """Return concatenated gzipped file containing
-       unaligned and aligned fastq sequences from bam.
-
-    Parameters
-    ----------
-    input_gz_filenames : list
-        list of unaligned and aligned fastq sequences
-    Returns
-    -------
-    output_gz : str
-        Path to concatenated fastq.gz file
-    """
-    with open(output_gz, 'wb') as wfp:
-        for fn in input_gz_filenames:
-            with open(fn, 'rb') as rfp:
-                shutil.copyfileobj(rfp, wfp)
-
-
 def get_cell_barcode(record, cell_barcode_pattern):
     """Return the cell barcode in the record name.
 
@@ -617,7 +597,7 @@ def count_umis_per_cell(
         cell_barcode_pattern,
         molecular_barcode_pattern,
         min_umi_per_cell,
-        barcodes_with_significant_umi_records_file):
+        barcodes_significant_umis_file):
     """Writes to csv the barcodes and number of umis, and to good_barcodes the
     barcodes with greater than or equal to min_umi_per_cell
 
@@ -626,19 +606,19 @@ def count_umis_per_cell(
     reads : str
         read records from fasta path
     csv: str
-        file to write barcodes and their corresponding number of umis
+        file to write number of umis
     cell_barcode_pattern: regex pattern
         cell barcode pattern to detect in the record name
     molecular_barcode_pattern: regex pattern
         molecular barcode pattern to detect in the record name
     min_umi_per_cell: int
         number of minimum umi per cell barcode
-    barcodes_with_significant_umi_records_file: str
+    barcodes_significant_umis_file: str
         write the valid
         barcodes that have greater than or equal to min_umi_per_cell
     Returns
     -------
-    Writes to csv barcodes and their corresponding number of umis
+    Writes to csv  corresponding number of umis
     Writes to barcodes_with_significant_umi_records
     list of the barcodes that have
     greater than or equal to min_umi_per_cell
@@ -654,7 +634,9 @@ def count_umis_per_cell(
 
     filtered = pd.Series(series[series >= min_umi_per_cell].index)
     filtered.to_csv(
-        barcodes_with_significant_umi_records_file, header=False, index=False)
+        barcodes_significant_umis_file, header=False, index=False)
+    logger.info(
+        "wrote good barcodes to {}".format(barcodes_significant_umis_file))
 
 
 def record_to_fastq_string(record, record_name=None):

@@ -32,7 +32,8 @@ def create_parser():
         help="A barcode is only considered a valid barcode read "
         "and its fasta is written if number of umis are greater "
         "than min-umi-per-barcode. It is used to weed out cell barcodes "
-        "with few umis that might have been due to false rna enzyme reactions")
+        "with few umis that might have been due to false rna enzyme reactions",
+        required=False)
     parser.add_argument(
         '--write-barcode-meta-csv', type=str,
         help="For each of the unique barcodes, "
@@ -40,16 +41,19 @@ def create_parser():
         "and number of umis per barcode.")
     parser.add_argument(
         '-p', '--processes', default=DEFAULT_PROCESSES, type=int,
-        help='Number of processes to use for reading 10x bam file')
+        help='Number of processes to use for reading 10x bam file',
+        required=False)
     parser.add_argument(
         '--delimiter', default=DEFAULT_DELIMITER, type=str,
-        help='delimiter between sequences of the same barcode')
+        help='delimiter between sequences of the same barcode',
+        required=False)
     parser.add_argument(
         '--save-fastas', default="", type=str,
         help='save merged fastas for all the unique'
         'barcodes to {CELL_BARCODE}.fasta '
         'in the absolute path given by this flag'
-        'By default, fastas are saved in current directory')
+        'By default, fastas are saved in current directory',
+        required=False)
     parser.add_argument(
         '--save-intermediate-files', default="/tmp/", type=str,
         help='save temporary fastas and chunks of bam files'
@@ -59,21 +63,22 @@ def create_parser():
         'not enough space on the device left depending on the size of your'
         'bam file and harddisk space allocated for tmp folder on your machine,'
         'so its better to specify a directory.'
-        'These files are deleted automatically at the end of the program')
+        'These files are deleted automatically at the end of the program',
+        required=False)
     parser.add_argument(
-        '--line-count', type=int,
+        '--shard-size', type=int,
         help='Line/Alignment count for each bam shard, higher the count lesser'
         'the number of temporary bam files and shards created, increase the'
         'default number according to the size of the bam file',
-        default=DEFAULT_LINE_COUNT)
+        default=DEFAULT_LINE_COUNT, required=False)
     parser.add_argument(
         "--cell-barcode-pattern", type=str,
         help="Regular expressions for cell barcodes",
-        default=CELL_BARCODE_PATTERN)
+        default=CELL_BARCODE_PATTERN, required=False)
     parser.add_argument(
         "--molecular-barcode-pattern", type=str,
         help="Regular expressions for molecular barcodes.",
-        default=MOLECULAR_BARCODE_PATTERN)
+        default=MOLECULAR_BARCODE_PATTERN, required=False)
     parser.add_argument(
         '--rename-10x-barcodes', type=str,
         help="Tab-separated file mapping 10x barcode name to new name"
@@ -88,4 +93,8 @@ def create_parser():
         help="To use shard & count method,specify 'shard',"
         "by default it runs through the bam file line-by-line",
         required=False, default=DEFAULT_METHOD)
+    parser.add_argument(
+        '--barcodes-significant-umis-file', type=str,
+        help="Barcodes file with significant umi count",
+        required=False)
     return parser
