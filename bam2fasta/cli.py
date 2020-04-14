@@ -106,6 +106,10 @@ def make_fastqs_percell(args):
         n_jobs, chunksize, len(pool_lists))
 
     # Multiprocess all the sequences for each barcode in a .fastq file
+    if "_aligned.fastq.gz" in args.filename:
+        args.channel_id = args.channel_id + "_aligned_"
+    elif "_unaligned.fastq.gz" in args.filename:
+        args.channel_id = args.channel_id + "_unaligned_"
     func = partial(
         tenx_utils.make_per_cell_fastqs,
         args.filename,
