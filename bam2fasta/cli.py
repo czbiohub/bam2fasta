@@ -118,10 +118,8 @@ def make_fastqs_percell(args):
     pool.map(func, pool_lists)
     pool.close()
     pool.join()
-    logger.info("{}".format(save_path))
     fastqs = glob.glob(os.path.join(save_path, "*.{}".format(
         args.output_format)))
-    logger.info("{}".format(fastqs))
     return fastqs
 
 
@@ -277,5 +275,4 @@ def percell(args):
                 save_fastas, basename_wo_format + os.sep)
             fastas += glob.glob(os.path.join(save_path, "*.{}".format(
                 args.output_format)))
-            logger.info('fastas in cli {}'.format(fastas))
     return fastas
