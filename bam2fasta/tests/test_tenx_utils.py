@@ -522,7 +522,7 @@ def test_make_per_cell_fastq_gzs():
             path,
             None,
             outdir,
-            "possorted_aligned",
+            "possorted_aligned_",
             "fastq.gz",
             bam2fasta_args.CELL_BARCODE_PATTERN,
             tenx.read_barcodes_file(barcodes_file))

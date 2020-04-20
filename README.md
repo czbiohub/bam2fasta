@@ -9,31 +9,31 @@ Latest version can be installed via pip package `bam2fasta`.
 
 Quick install given you have the ssl and zlib packages are already installed.
 
-    pip install bam2fasta
-    conda install -c bioconda bam2fasta
+		pip install bam2fasta
+		conda install -c bioconda bam2fasta
 
 Please refer to .travis.yml to see what packages are apt addons on linux and linux addons are required
 
 For osx, before `pip install bam2fasta` install the below homebrew packages
 
-    sudo pip install setuptools
-    brew update
-    brew install openssl
-    brew install zlib
+		sudo pip install setuptools
+		brew update
+		brew install openssl
+		brew install zlib
 
 For linux, before `pip install bam2fasta` install the below apt packages
 
-    apt-get install libbz2-dev
-    apt-get install libcurl4-openssl-dev
-    apt-get install libssl-dev
+		apt-get install libbz2-dev
+		apt-get install libcurl4-openssl-dev
+		apt-get install libssl-dev
 
 
 ## Usage
 
 Bam2fasta info command:
-  
-    bam2fasta info
-    bam2fasta info -v
+	
+		bam2fasta info
+		bam2fasta info -v
 
 Bam2fasta percell command, it takes BAM and/or barcode files as input. Examples:
 	
@@ -44,45 +44,45 @@ Bam2fasta percell command, it takes BAM and/or barcode files as input. Examples:
 		--barcodes 10x-example/barcodes.tsv \
 		--rename-10x-barcodes 10x-example/barcodes_renamer.tsv \
 		--shard-size 150 \
-    --save-intermediate-files intermediate_files
+		--save-intermediate-files intermediate_files
 
 Bam2fasta count_umis_percell command, it takes fastq.gz file with sequences and barcodes, umis in their read id and counts the umis per cell. Examples:
-  
-  bam2fasta count_umis_percell --filename filename.fastq.gz 
-  bam2fasta count_umis_percell --filename 10x-example/possorted_genome_bam.fastq.gz \
-    --write-barcode-meta-csv all_barcodes_meta.csv \
-    --min-umi-per-barcode 10 \
-    --barcodes-significant-umis-file good_barcodes.csv \
-    --cell-barcode-pattern 'CB:Z' \
-    --molecular-barcode-pattern 'UB:Z'
+	
+	bam2fasta count_umis_percell --filename filename.fastq.gz 
+	bam2fasta count_umis_percell --filename 10x-example/possorted_genome_bam.fastq.gz \
+		--write-barcode-meta-csv all_barcodes_meta.csv \
+		--min-umi-per-barcode 10 \
+		--barcodes-significant-umis-file good_barcodes.csv \
+		--cell-barcode-pattern 'CB:Z' \
+		--molecular-barcode-pattern 'UB:Z'
 
 Bam2fasta make_fastqs_percell command, it takes BAM and/or barcode files as input. Examples:
-  
-  bam2fasta make_fastqs_percell --filename filename.fastq.gz 
-  bam2fasta make_fastqs_percell --filename 10x-example/possorted_genome_bam.fastq.gz \
-    --save-fastas fastas \
-    --min-umi-per-barcode 10 \
-    --barcodes-significant-umis-file good_barcodes.csv \
-    --barcodes 10x-example/barcodes.tsv \
-    --cell-barcode-pattern 'CB:Z' \
-    --rename-10x-barcodes 10x-example/barcodes_renamer.tsv
+	
+	bam2fasta make_fastqs_percell --filename filename.fastq.gz 
+	bam2fasta make_fastqs_percell --filename 10x-example/possorted_genome_bam.fastq.gz \
+		--save-fastas fastas \
+		--min-umi-per-barcode 10 \
+		--barcodes-significant-umis-file good_barcodes.csv \
+		--barcodes 10x-example/barcodes.tsv \
+		--cell-barcode-pattern 'CB:Z' \
+		--rename-10x-barcodes 10x-example/barcodes_renamer.tsv
 
 * [Main arguments](#main-arguments)
-    * [`--filename`](#--filename)
-   	* [Bam optional parameters](#bam-optional-parameters)
-        * [`--min-umi-per-barcode`](#--min-umi-per-barcode)
-        * [`--write-barcode-meta-csv`](#--write-barcode-meta-csv)
-        * [`--processes`](#--processes)
-        * [`--delimiter`](#--delimiter)
-        * [`--save-fastas`](#--save-fastas)
-        * [`--save-intermediate-files`](#--save-intermediate-files)
-        * [`--cell-barcode-patternt`](#--cell-barcode-pattern)
-        * [`--molecular-barcode-pattern`](#--molecular-barcode-pattern)
-        * [`--barcodes-file`](#--barcodes-file)
-        * [`--rename-10x-barcodes`](#--rename-10x-barcodes)
-        * [`--method`](#--method)
-        * [`--output-format`](#--output-format)
-        * [`--channel-id`](#--channel-id)
+		* [`--filename`](#--filename)
+		* [Bam optional parameters](#bam-optional-parameters)
+				* [`--min-umi-per-barcode`](#--min-umi-per-barcode)
+				* [`--write-barcode-meta-csv`](#--write-barcode-meta-csv)
+				* [`--processes`](#--processes)
+				* [`--delimiter`](#--delimiter)
+				* [`--save-fastas`](#--save-fastas)
+				* [`--save-intermediate-files`](#--save-intermediate-files)
+				* [`--cell-barcode-patternt`](#--cell-barcode-pattern)
+				* [`--molecular-barcode-pattern`](#--molecular-barcode-pattern)
+				* [`--barcodes-file`](#--barcodes-file)
+				* [`--rename-10x-barcodes`](#--rename-10x-barcodes)
+				* [`--method`](#--method)
+				* [`--output-format`](#--output-format)
+				* [`--channel-id`](#--channel-id)
 
 
 ### `--bam`
@@ -122,7 +122,7 @@ If left unspecified, barcodes in bam as given in barcodes_file are not renamed.
 **Example parameters**
 
 * Default: Save fastas in current working directory:
-  * `--save-fastas "fastas"`
+	* `--save-fastas "fastas"`
 
 ### `--save-intermediate-files`
 
@@ -132,7 +132,7 @@ If left unspecified, barcodes in bam as given in barcodes_file are not renamed.
 **Example parameters**
 
 * Default: Save temporary fastas and bam in `/tmp/` directory:
-  * `--save-intermediate-files "fastas"`
+	* `--save-intermediate-files "fastas"`
 
 
 ### `--write-barcode-meta-csv`
@@ -140,7 +140,7 @@ This creates a CSV containing the number of reads and number of UMIs per barcode
 **Example parameters**
 
 * Default: barcode metadata is not saved 
-  * `--write-barcode-meta-csv "barcodes_counts.csv"`
+	* `--write-barcode-meta-csv "barcodes_counts.csv"`
 
 
 ### `--min-umi-per-barcode`
@@ -150,7 +150,7 @@ The parameter `--min-umi-per-barcode` ensures that a barcode is only considered 
 
 * Default: min-umi-per-barcode is 0
 * Set minimum UMI per cellular barcode as 10:
-  * `--min-umi-per-barcode 10`
+	* `--min-umi-per-barcode 10`
 
 
 ### `--shard-size`
@@ -158,7 +158,7 @@ The parameter `--shard-size` specifies the number of alignments/lines in each ba
 **Example parameters**
 
 * Default: shard-size is 1500
-  * `--shard-size 400`
+	* `--shard-size 400`
 
 
 ### `--processes`
@@ -166,7 +166,7 @@ The parameter `--processes` specifies the number of cores/processes to paralleli
 **Example parameters**
 
 * Default: processes is 2
-  * `--processes 400`
+	* `--processes 400`
 
 
 ### `--delimiter`
@@ -174,7 +174,7 @@ The parameter `--delimiter` specifies delimiter between sequences of the same ba
 **Example parameters**
 
 * Default: delimiter is X
-  * `--delimiter X`
+	* `--delimiter X`
 
 
 ### `--cell-barcode-pattern`
@@ -182,7 +182,7 @@ The parameter `--cell-barcode-pattern` specifies the regular expressions for mol
 **Example parameters**
 
 * Default: cell-barcode-pattern is (CB|XC):Z:
-  * `--cell-barcode-pattern 'CB:Z'`
+	* `--cell-barcode-pattern 'CB:Z'`
 
 
 ### `--molecular-barcode-pattern`
@@ -190,7 +190,7 @@ The parameter `--molecular-barcode-pattern` specifies the regular expressions fo
 **Example parameters**
 
 * Default: molecular-barcode-pattern is '(UB|XB):Z:([ACGT]+)'
-  * `--molecular-barcode-pattern 'UB:Z'`
+	* `--molecular-barcode-pattern 'UB:Z'`
 
 
 ### `--method`
@@ -198,7 +198,7 @@ The parameter `--method` specifies the method to convert bam to per cell fastas.
 **Example parameters**
 
 * Default: method is default
-  * `--method shard`
+	* `--method shard`
 
 
 ### `--channel-id`
@@ -206,7 +206,7 @@ The parameter `--channel-id` specifies the prefix for fastqs or fastq.gzs saved 
 **Example parameters**
 
 * Default: channel-id is ''
-  * `--channel-id 'possorted_aligned'`
+	* `--channel-id 'possorted_aligned'`
 
 
 ### `--output-format`
@@ -214,4 +214,4 @@ The parameter `--output-format` specifies the format of output fastq per cell fi
 **Example parameters**
 
 * Default: output-format is fastq
-  * `--output-format fastq.gz`
+	* `--output-format fastq.gz`

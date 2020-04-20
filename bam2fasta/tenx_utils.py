@@ -740,6 +740,6 @@ def make_per_cell_fastqs(
                     [record],
                     os.path.join(
                         outdir,
-                        "{}_".format(channel_id) + renamed + ".{}".format(
+                        "{}".format(channel_id) + renamed + ".{}".format(
                             output_format)),
                     renamed)

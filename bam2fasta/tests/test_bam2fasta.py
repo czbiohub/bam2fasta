@@ -78,11 +78,8 @@ def test_run_make_fastqs_percell():
             ' --save-fastas ' + fastas_dir,
             in_directory=location)
         assert status == 0
-        fastqs = glob.glob(
-            os.path.join(fastas_dir + os.sep + "possorted_genome_bam",
-                         "*.fastq"),
-            recursive=True)
-        assert len(fastqs) == 1
+        fastqs = glob.glob(os.path.join(fastas_dir + "/*.fastq"))
+        assert len(fastqs) == 1, "fastas_dir is {}".format(fastas_dir)
 
 
 def test_run_bam2fasta_supply_all_args():
@@ -200,7 +197,7 @@ def test_run_bam2fasta_percell_no_shard_nonzero_umi():
              '--min-umi-per-barcode', '10'])
         barcodes = [
             filename.replace(".fastq", "") for filename in fasta_files]
-        assert len(barcodes) == 1
+        assert len(barcodes) == 1, "barcodes are {}".format(barcodes)
         sequences_fastq = []
         with screed.open(fasta_files[0]) as f:
             for record in f:

@@ -64,13 +64,15 @@ def make_fastqs_percell(args):
         parser = create_parser()
         args = parser.parse_args(args)
         logger.info(args)
-    save_fastas = os.path.abspath(args.save_fastas)
+    with screed.open(args.filename) as f:
+        record_count = 0
+        for record in f:
+            record_count += 1
+    if record_count == 0:
+        return []
+    save_path = os.path.abspath(args.save_fastas)
     # Save fasta sequences for aligned and unaligned sequences in
     # separate folders with the following name in save_fastas
-    basename_wo_format = os.path.basename(
-        args.filename).replace(".fastq.gz", "")
-    save_path = os.path.join(
-        save_fastas, basename_wo_format + os.sep)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     else:
@@ -104,12 +106,6 @@ def make_fastqs_percell(args):
     logger.info(
         "Pooled %d and chunksize %d mapped for %d lists",
         n_jobs, chunksize, len(pool_lists))
-
-    # Multiprocess all the sequences for each barcode in a .fastq file
-    if "_aligned.fastq.gz" in args.filename:
-        args.channel_id = args.channel_id + "_aligned_"
-    elif "_unaligned.fastq.gz" in args.filename:
-        args.channel_id = args.channel_id + "_unaligned_"
     func = partial(
         tenx_utils.make_per_cell_fastqs,
         args.filename,
@@ -256,11 +252,12 @@ def percell(args):
         barcodes_significant_umis_file = args.barcodes_significant_umis_file
         logger.info("barcodes_significant_umis_file {}".format(
             barcodes_significant_umis_file))
-        fastas = []
         # For each of the unaligned and aligned fastq.gz files
         for filename in filenames:
             # Find the good_barcodes file from the aligned sequences and use it
             # for unaligned.fastq.gz
+            basename_wo_format = os.path.basename(
+                filename).replace(".fastq.gz", "__")
             args.filename = filename
             if (len(filenames) == 1 or
                 (barcodes_significant_umis_file
@@ -269,14 +266,11 @@ def percell(args):
                     save_fastas,
                     "barcodes_with_significant_umis.tsv")
                 count_umis_percell(args)
+            args.channel_id = basename_wo_format
             make_fastqs_percell(args)
             logger.info(
                 "time taken to write fastas is %.5f seconds",
                 time.time() - startt)
-            basename_wo_format = os.path.basename(
-                args.filename).replace(".fastq.gz", "")
-            save_path = os.path.join(
-                save_fastas, basename_wo_format + os.sep)
-            fastas += glob.glob(os.path.join(save_path, "*.{}".format(
-                args.output_format)))
+        fastas = glob.glob(os.path.join(args.save_fastas, "*.{}".format(
+            args.output_format)))
     return fastas
