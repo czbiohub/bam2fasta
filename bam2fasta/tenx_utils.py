@@ -10,8 +10,6 @@ import tempfile
 import time
 
 import glob
-import pysam
-import gzip
 import re
 import screed
 from tqdm import tqdm
@@ -441,78 +439,6 @@ def write_to_barcode_meta_csv(
                                              umi_count,
                                              read_count))
             os.unlink(barcode_meta_txt)
-
-
-def get_fastq_unaligned(input_bam, n_cpus, save_files):
-    """Get unaligned fastq sequences from bam.
-
-    Parameters
-    ----------
-    input_bam : str
-        Name of the bam file
-    n_cpus: int
-        number of threads to parallelize the bam file conversion across
-    save_files: str
-        Path to save the output bam and fastq.gz file
-    Returns
-    -------
-    fastq_gz : str
-        Path to converted fastq.gz file
-    """
-    basename = os.path.basename(input_bam)
-    converted_bam = basename.replace(".bam", "_conveted.bam")
-    converted_bam = os.path.join(save_files, converted_bam)
-    pysam.view(
-        input_bam, *["-f4", "-o", converted_bam],
-        catch_stdout=False)
-    fastq = pysam.fastq(
-        converted_bam,
-        *["--threads", "{}".format(n_cpus), "-T", TENX_TAGS]).encode()
-    fastq_gz = os.path.join(
-        save_files,
-        "{}__unaligned.fastq.gz".format(basename.replace(".bam", "")))
-    output = gzip.open(fastq_gz, 'wb')
-    try:
-        output.write(fastq)
-    finally:
-        output.close()
-    return fastq_gz
-
-
-def get_fastq_aligned(input_bam, n_cpus, save_files):
-    """Get aligned fastq sequences from bam.
-
-    Parameters
-    ----------
-    input_bam : str
-        Name of the bam file
-    n_cpus: int
-        number of threads to parallelize the bam file conversion across
-    save_files: str
-        Path to save the output bam and fastq.gz file
-    Returns
-    -------
-    fastq_gz : str
-        Path to converted fastq.gz file
-    """
-    basename = os.path.basename(input_bam)
-    converted_bam = basename.replace(".bam", "_conveted.bam")
-    converted_bam = os.path.join(save_files, converted_bam)
-    pysam.view(
-        input_bam, *["-ub", "-F", "256", "-q", "255", "-o", converted_bam],
-        catch_stdout=False)
-    fastq = pysam.fastq(
-        converted_bam,
-        *["--threads", "{}".format(n_cpus), "-T", TENX_TAGS]).encode()
-    fastq_gz = os.path.join(
-        save_files,
-        "{}__aligned.fastq.gz".format(basename.replace(".bam", "")))
-    output = gzip.open(fastq_gz, 'wb')
-    try:
-        output.write(fastq)
-    finally:
-        output.close()
-    return fastq_gz
 
 
 def get_cell_barcode(record, cell_barcode_pattern):

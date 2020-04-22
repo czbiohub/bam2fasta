@@ -236,41 +236,27 @@ def percell(args):
         # Gather all the fastas
         fastas = glob.glob(os.path.join(save_fastas, "*_bam2fasta.fasta"))
     else:
-        # If the input format is bam and the method is default method
-        # i.e no sharding, convert the bam file to get fastq.gz for unaligned
-        # and aligned sequences
-        if input_format == "bam":
-            aligned_fastq_gz = tenx_utils.get_fastq_aligned(
-                args.filename, n_jobs, save_intermediate_files)
-            unaligned_fastq_gz = tenx_utils.get_fastq_unaligned(
-                args.filename, n_jobs, save_intermediate_files)
-            filenames = [aligned_fastq_gz, unaligned_fastq_gz]
         # if the fastq.gz file is already given
-        elif input_format == "gz":
-            filenames = [args.filename]
+        assert input_format == "gz", \
+            ("for the default method please convert" +
+             "bam files to fastq.gz using samtools")
         # Check if the good barcodes with significant umis is already given
         barcodes_significant_umis_file = args.barcodes_significant_umis_file
         logger.info("barcodes_significant_umis_file {}".format(
             barcodes_significant_umis_file))
-        # For each of the unaligned and aligned fastq.gz files
-        for filename in filenames:
-            # Find the good_barcodes file from the aligned sequences and use it
-            # for unaligned.fastq.gz
-            basename_wo_format = os.path.basename(
-                filename).replace(".fastq.gz", "__")
-            args.filename = filename
-            if (len(filenames) == 1 or
-                (barcodes_significant_umis_file
-                 is None and "__aligned.fastq.gz" in filename)):
-                args.barcodes_significant_umis_file = os.path.join(
-                    save_fastas,
-                    "barcodes_with_significant_umis.tsv")
-                count_umis_percell(args)
-            args.channel_id = basename_wo_format
-            make_fastqs_percell(args)
-            logger.info(
-                "time taken to write fastas is %.5f seconds",
-                time.time() - startt)
+        # Find the good_barcodes file from the aligned sequences and use it
+        # for unaligned.fastq.gz
+        basename_wo_format = os.path.basename(
+            args.filename).replace(".fastq.gz", "__")
+        args.barcodes_significant_umis_file = os.path.join(
+            save_fastas,
+            "barcodes_with_significant_umis.tsv")
+        count_umis_percell(args)
+        args.channel_id = basename_wo_format
+        make_fastqs_percell(args)
+        logger.info(
+            "time taken to write fastas is %.5f seconds",
+            time.time() - startt)
         fastas = glob.glob(os.path.join(args.save_fastas, "*.{}".format(
             args.output_format)))
     return fastas
