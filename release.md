@@ -4,10 +4,6 @@
 These are adapted from the khmer release docs, originally written by
 Michael Crusoe.
 
-Remember to update release numbers/RC in:
-
-* this document
-
 ## Testing a release
 
 
@@ -123,7 +119,9 @@ git push --delete https://github.com/czbiohub/bam2fasta.git v${new_version}${rc}
 ```
 4. Add the release on GitHub, using the tag you just pushed.  Name it 'version X.Y.Z'
 
-## Bioconda - Not currently supported yet
+## Bioconda
+
+`conda install -c bioconda bam2fasta`
 
 The BiocondaBot has an `autobump` feature that should pick up new releases from PyPI, and open a PR in Bioconda. Review any changes
 (especially dependency versions, since these don't get picked up).
