@@ -1,6 +1,7 @@
 bam2fasta
 ================================
 ![Tests](https://travis-ci.com/czbiohub/bam2fasta.svg)
+[![codecov](https://codecov.io/gh/czbiohub/bam2fasta/branch/master/graph/badge.svg)](https://codecov.io/gh/czbiohub/bam2fasta)
 
 Convert 10x bam file to individual FASTA files per cell barcode
 
