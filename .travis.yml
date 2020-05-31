@@ -133,4 +133,3 @@ script:
 after_success:
   - coverage run -m unittest discover -s bam2fasta -p "*_test.py"
   - codecov
-  - bash <(curl -s https://codecov.io/bash)
