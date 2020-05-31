@@ -43,7 +43,7 @@ SETUP_METADATA = \
         "maintainer_email": "pranathi93.vemuri@gmail.com",
         "license": "MIT License",
         "keywords": KEYWORDS,
-        "packages": find_packages(exclude=["tests", "benchmarks"]),
+        "packages": find_packages(exclude=["tests"]),
         "entry_points": {'console_scripts': [
             'bam2fasta = bam2fasta.__main__:main']},
         "install_requires": ["screed>=0.9",

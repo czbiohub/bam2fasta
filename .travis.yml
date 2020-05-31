@@ -125,7 +125,6 @@ matrix:
 os: linux
 script: 
   - flake8 --config .flake8
-  - pytest --cov=.
   - bam2fasta percell --method shard --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --shard-size 1500
   - bam2fasta percell --method no_shard --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4
   - bam2fasta count_umis_percell --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.fastq.gz --barcodes-significant-umis-file good_barcodes.csv --write-barcode-meta-csv all_barcodes_meta.csv
