@@ -1,12 +1,7 @@
 from __future__ import print_function
 from setuptools import setup, find_packages
-import os
 
 
-EXTRA_LINK_ARGS = []
-NAME = 'bam2fasta'
-PACKAGES = find_packages()
-META_PATH = os.path.join('bam2fasta', '__init__.py')
 KEYWORDS = [
     '10x', 'bam',
     'genomic', 'fastas',
@@ -47,6 +42,7 @@ SETUP_METADATA = \
         "maintainer": "Pranathi Vemuri",
         "maintainer_email": "pranathi93.vemuri@gmail.com",
         "license": "MIT License",
+        "keywords": KEYWORDS,
         "packages": find_packages(exclude=["tests", "benchmarks"]),
         "entry_points": {'console_scripts': [
             'bam2fasta = bam2fasta.__main__:main']},
