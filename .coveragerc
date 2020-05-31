@@ -1,0 +1,9 @@
+[run]
+branch = True
+concurrency = multiprocessing
+parallel = True
+include=
+    bam2fasta/*.py
+omit =
+    setup.py
+    tests/*
