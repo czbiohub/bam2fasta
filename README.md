@@ -1,4 +1,7 @@
-# bam2fasta
+bam2fasta
+================================
+![Tests](https://travis-ci.com/czbiohub/bam2fasta.svg)
+
 Convert 10x bam file to individual FASTA files per cell barcode
 
 Free software: MIT license
