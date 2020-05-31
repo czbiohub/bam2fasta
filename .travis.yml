@@ -132,3 +132,4 @@ script:
   - bam2fasta make_fastqs_percell --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.fastq.gz --save-fastas fastas --min-umi-per-barcode 10 --barcodes-significant-umis-file ./bam2fasta/tests/test-data/10x-example/good_barcodes.csv
 after_success:
   - codecov
+  - bash <(curl -s https://codecov.io/bash)
