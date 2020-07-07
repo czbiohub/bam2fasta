@@ -555,8 +555,10 @@ def count_umis_per_cell(
         molecular_barcode_pattern)
     umi_per_barcode = {
         k: len(v) for k, v in barcode_counter.items()}
+    result_df = pd.DataFrame.from_dict(umi_per_barcode)
+    result_df.to_csv(csv, header=False, index=False)
+
     series = pd.Series(umi_per_barcode)
-    series.to_csv(csv, header=False, index=False)
 
     filtered = pd.Series(series[series >= min_umi_per_cell].index)
     filtered.to_csv(
