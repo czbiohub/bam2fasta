@@ -556,7 +556,7 @@ def count_umis_per_cell(
     umi_per_barcode = {
         k: len(v) for k, v in barcode_counter.items()}
     result_df = pd.DataFrame.from_dict(umi_per_barcode, orient='index')
-    result_df.to_csv(csv, header=False, index=False)
+    result_df.to_csv(csv, header=False)
 
     series = pd.Series(umi_per_barcode)
 

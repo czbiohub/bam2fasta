@@ -37,7 +37,7 @@ def create_parser():
     parser.add_argument(
         '--write-barcode-meta-csv', type=str,
         help="For each of the unique barcodes, "
-        "Write to a given path, number of reads"
+        "Write to a given path, barcode and"
         "and number of umis per barcode.")
     parser.add_argument(
         '-p', '--processes', default=DEFAULT_PROCESSES, type=int,
