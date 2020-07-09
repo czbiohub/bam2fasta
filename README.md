@@ -140,7 +140,7 @@ If left unspecified, barcodes in bam as given in barcodes_file are not renamed.
 
 
 ### `--write-barcode-meta-csv`
-This creates a CSV containing the number of reads and number of UMIs per barcode, written in a path given by `write_barcode_meta_csv`. This csv file is empty with just header when the min-umi-per-barcode is zero i.e reads and UMIs per barcode are calculated only when the barcodes are filtered based on [min-umi-per-barcode](#--min-umi-per-barcode)
+This creates a CSV containing the barcode and number of UMIs per barcode, written in a path given by `write_barcode_meta_csv`. This csv file is empty when the min-umi-per-barcode is zero i.e reads and UMIs per barcode are calculated only when the barcodes are filtered based on [min-umi-per-barcode](#--min-umi-per-barcode)
 **Example parameters**
 
 * Default: barcode metadata is not saved 
