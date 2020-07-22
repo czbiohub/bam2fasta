@@ -72,28 +72,29 @@ Bam2fasta make_fastqs_percell command, it takes BAM and/or barcode files as inpu
 
 ## Table of Contents
 * [Main arguments](#main-arguments)
-		* [`--filename`](#--filename)
-		* [Bam optional parameters](#bam-optional-parameters)
-				* [`--min-umi-per-barcode`](#--min-umi-per-barcode)
-				* [`--write-barcode-meta-csv`](#--write-barcode-meta-csv)
-				* [`--processes`](#--processes)
-				* [`--delimiter`](#--delimiter)
-				* [`--save-fastas`](#--save-fastas)
-				* [`--save-intermediate-files`](#--save-intermediate-files)
-				* [`--cell-barcode-patternt`](#--cell-barcode-pattern)
-				* [`--molecular-barcode-pattern`](#--molecular-barcode-pattern)
-				* [`--barcodes-file`](#--barcodes-file)
-				* [`--rename-10x-barcodes`](#--rename-10x-barcodes)
-				* [`--method`](#--method)
-				* [`--output-format`](#--output-format)
-				* [`--channel-id`](#--channel-id)
+    * [`--filename`](#--filename)
+* [Bam optional parameters](#bam-optional-parameters)
+    * [`--barcodes-file`](#--barcodes-file)
+    * [`--rename-10x-barcodes`](#--rename-10x-barcodes)
+    * [`--save-fastas`](#--save-fastas)
+    * [`--save-intermediate-files`](#--save-intermediate-files)
+    * [`--write-barcode-meta-csv`](#--write-barcode-meta-csv)
+    * [`--min-umi-per-barcode`](#--min-umi-per-barcode)
+    * [`--shard-size`](#--shard-size)
+    * [`--processes`](#--processes)
+    * [`--delimiter`](#--delimiter)
+    * [`--cell-barcode-patternt`](#--cell-barcode-pattern)
+    * [`--molecular-barcode-pattern`](#--molecular-barcode-pattern)
+    * [`--method`](#--method)
+    * [`--channel-id`](#--channel-id)
+    * [`--output-format`](#--output-format)
 
 
 ### `--filename`
 For bam/10x files, Use this to specify the location of the bam file or tenx.gz file to get per cell fastas/fastqs. For example:
 
 ```bash
---bam /path/to/data/10x-example/possorted_genome_bam
+--filename /path/to/data/10x-example/possorted_genome_bam
 ```
 
 ## Bam optional parameters
