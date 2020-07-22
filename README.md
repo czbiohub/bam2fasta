@@ -14,7 +14,6 @@ Latest version can be installed via pip package `bam2fasta`.
 Quick install given you have the ssl and zlib packages are already installed.
 
 		pip install bam2fasta
-		conda install -c bioconda bam2fasta
 
 Please refer to .travis.yml to see what packages are apt addons on linux and linux addons are required
 
@@ -71,6 +70,7 @@ Bam2fasta make_fastqs_percell command, it takes BAM and/or barcode files as inpu
 		--cell-barcode-pattern 'CB:Z' \
 		--rename-10x-barcodes 10x-example/barcodes_renamer.tsv
 
+## Table of Contents
 * [Main arguments](#main-arguments)
 		* [`--filename`](#--filename)
 		* [Bam optional parameters](#bam-optional-parameters)
@@ -89,7 +89,7 @@ Bam2fasta make_fastqs_percell command, it takes BAM and/or barcode files as inpu
 				* [`--channel-id`](#--channel-id)
 
 
-### `--bam`
+### `--filename`
 For bam/10x files, Use this to specify the location of the bam file or tenx.gz file to get per cell fastas/fastqs. For example:
 
 ```bash
