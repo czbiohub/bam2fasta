@@ -371,7 +371,14 @@ def test_count_umis_per_cell(expected_good_barcodes):
             3,
             good_barcodes)
         expected_meta = [15, 2, 2, 5, 4, 6, 2]
-        assert expected_meta == pd.read_csv(meta).iloc[:, 0].values.tolist()
+        all_barcodes = [
+            'AAATGCCCAAACTGCT-1', 'AACACGTAGTGTACCT-1',
+            'AACCATGAGTTGTCGT-1', 'AAATGCCGTGAACCTT-1',
+            'AAATGCCAGATAGTCA-1', 'AAACGGGAGGATATAC-1',
+            'AAACGGGTCTCGTATT-1']
+        assert all_barcodes == pd.read_csv(
+            meta).iloc[:, 0].values.tolist()
+        assert expected_meta == pd.read_csv(meta).iloc[:, 1].values.tolist()
         assert expected_good_barcodes == pd.read_csv(
             good_barcodes).iloc[:, 0].values.tolist()
 
