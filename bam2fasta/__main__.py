@@ -30,6 +30,9 @@ def main():
         level=logging.INFO)
 
     commands = {
+        # keeping back compatibility
+        # bam2fasta 1.0.1 conversion of bam2fsta was called convert
+        'convert': percell,
         'percell': percell,
         'info': info,
         'count_umis_percell': count_umis_percell,

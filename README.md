@@ -14,6 +14,7 @@ Latest version can be installed via pip package `bam2fasta`.
 Quick install given you have the ssl and zlib packages are already installed.
 
 		pip install bam2fasta
+		conda install -c bioconda bam2fasta
 
 Please refer to .travis.yml to see what packages are apt addons on linux and linux addons are required
 
