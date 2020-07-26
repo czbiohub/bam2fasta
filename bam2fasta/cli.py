@@ -260,3 +260,9 @@ def percell(args):
         fastas = glob.glob(os.path.join(args.save_fastas, "*.{}".format(
             args.output_format)))
     return fastas
+
+
+def convert(args):
+    # keeping back compatibility
+    # bam2fasta 1.0.1 conversion of bam2fsta was called convert
+    return percell(args)
