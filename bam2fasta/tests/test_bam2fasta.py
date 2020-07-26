@@ -156,6 +156,18 @@ def test_run_bam2fasta_percell():
         assert len(barcodes) == 8
 
 
+def test_run_bam2fasta_convert():
+    with utils.TempDirectory() as location:
+        testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+
+        fasta_files = cli.convert(
+            ['--filename', testdata1, '--save-fastas', location,
+             '--method', 'shard'])
+
+        barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
+        assert len(barcodes) == 8
+
+
 def test_run_bam2fasta_percell_no_shard():
     with utils.TempDirectory() as location:
         testdata1 = utils.get_test_data(
