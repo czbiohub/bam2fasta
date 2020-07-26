@@ -385,12 +385,13 @@ def test_count_umis_per_cell(expected_good_barcodes):
 
 def test_record_to_fastq_string():
     path = utils.get_test_data('10x-example/possorted_genome_bam.fastq.gz')
+    expected = (
+        "@A00111:50:H2H5YDMXX:2:1334:1886:36072\tUB:Z:AGAAAATACG\n" +
+        "GATTACTTAGTAGCTGTTTACTTAGCAGCACATTTGCAACAGCATCAAAAGCTATGT" +
+        "TACTATAAAATCAGTGCGTGAAGTCTGATTTAC\n")
     with screed.open(path) as f:
         for record_count, record in enumerate(f):
             result = tenx.record_to_fastq_string(record)
-            expected = (
-                "@A00111:50:H2H5YDMXX:2:1334:1886:36072\tUB:Z:AGAAAATACG\n" +
-                "GATTACTTAGTAGCTGTTTACTTAGCAGCACATTTGCAACAGCATCAAAAGCTATGTTACTATAAAATCAGTGCGTGAAGTCTGATTTAC\n")
             assert expected in result
             break
 
