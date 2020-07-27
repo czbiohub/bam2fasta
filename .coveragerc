@@ -1,0 +1,6 @@
+[run]
+include=
+    bam2fasta/*.py
+omit =
+    setup.py
+    bam2fasta/tests/*
