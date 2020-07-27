@@ -10,7 +10,7 @@ dist: FORCE
 	$(PYTHON) setup.py sdist
 
 test:
-	pip install -e '.[test]'
+	pip install -e '.[test]' --user
 	$(PYTHON) -m pytest
 
 coverage:
