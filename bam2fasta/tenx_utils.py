@@ -424,17 +424,22 @@ def write_to_barcode_meta_csv(
     """
     barcodes_meta_txts = glob.glob(
         os.path.join(barcode_meta_folder, "*_meta.txt"))
+    basenames = [
+        os.path.basename(i) for i in barcodes_meta_txts]
+    basenames = sorted(basenames)
     with open(write_barcode_meta_csv, "w") as fp:
         fp.write("{},{},{}".format(CELL_BARCODE, UMI_COUNT,
                                    READ_COUNT))
         fp.write('\n')
-        for barcode_meta_txt in barcodes_meta_txts:
+        for basename in basenames:
+            barcode_meta_txt = os.path.join(
+                barcode_meta_folder, basename)
             with open(barcode_meta_txt, 'r') as f:
                 umi_count, read_count = f.readline().split()
                 umi_count = int(umi_count)
                 read_count = int(read_count)
 
-                barcode_name = barcode_meta_txt.replace('_meta.txt', '')
+                barcode_name = basename.replace('_meta.txt', '')
                 fp.write("{},{},{}\n".format(barcode_name,
                                              umi_count,
                                              read_count))
@@ -549,14 +554,20 @@ def count_umis_per_cell(
     list of the barcodes that have
     greater than or equal to min_umi_per_cell
     """
+
     barcode_counter = get_cell_barcode_umis(
         reads,
         cell_barcode_pattern,
         molecular_barcode_pattern)
     umi_per_barcode = {
         k: len(v) for k, v in barcode_counter.items()}
-    result_df = pd.DataFrame.from_dict(umi_per_barcode, orient='index')
-    result_df.to_csv(csv, header=False)
+    sorted(umi_per_barcode.items(), key=lambda x: x[0])
+    data = {
+        'barcode': list(umi_per_barcode.keys()),
+        'umi_count': list(umi_per_barcode.values())
+    }
+    result_df = pd.DataFrame(data)
+    result_df.to_csv(csv, header=False, index=False)
 
     series = pd.Series(umi_per_barcode)
 
