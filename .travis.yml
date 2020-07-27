@@ -67,7 +67,6 @@ matrix:
         - bam2fasta convert --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --shard-size 1500
         - bam2fasta convert --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.fastq.gz --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4
     - 
-      language: generic
       os: osx
       python: 2.7
       before_install:
@@ -85,7 +84,6 @@ matrix:
         - bam2fasta convert --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --shard-size 1500
         - bam2fasta convert --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.fastq.gz --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4
     - 
-      language: generic
       os: osx
       python: 3.5
       before_install:
@@ -103,7 +101,6 @@ matrix:
         - bam2fasta convert --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --shard-size 1500
         - bam2fasta convert --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.fastq.gz --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4
     - 
-      language: generic
       os: osx
       python: 3.6.5
       before_install:
@@ -123,7 +120,6 @@ matrix:
         - bam2fasta convert --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --shard-size 1500
         - bam2fasta convert --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.fastq.gz --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4
     - 
-      language: generic
       os: osx
       python: 3.7.3
       before_install:
