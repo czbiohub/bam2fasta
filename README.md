@@ -78,6 +78,16 @@ Bam2fasta percell command, it takes BAM and/or barcode files as input. Examples:
 		--shard-size 150 \
 		--save-intermediate-files intermediate_files
 
+Bam2fasta percell command, it takes fastq.gz and/or barcode files as input. Examples:
+	
+	bam2fasta percell --filename 10x-example/possorted_genome_bam.fastq.gz \
+		--save-fastas fastas --min-umi-per-barcode 10 \
+		--write-barcode-meta-csv all_barcodes_meta.csv \
+		--barcodes 10x-example/barcodes.tsv \
+		--rename-10x-barcodes 10x-example/barcodes_renamer.tsv \
+		--shard-size 150 \
+		--save-intermediate-files intermediate_files
+
 Bam2fasta count_umis_percell command, it takes fastq.gz file with sequences and barcodes, umis in their read id and counts the umis per cell. Examples:
 	
 	bam2fasta count_umis_percell --filename filename.fastq.gz 
@@ -88,7 +98,7 @@ Bam2fasta count_umis_percell command, it takes fastq.gz file with sequences and 
 		--cell-barcode-pattern 'CB:Z' \
 		--molecular-barcode-pattern 'UB:Z'
 
-Bam2fasta make_fastqs_percell command, it takes BAM and/or barcode files as input. Examples:
+Bam2fasta make_fastqs_percell command, it takes it takes fastq.gz file with sequences and barcodes. Examples:
 	
 	bam2fasta make_fastqs_percell --filename filename.fastq.gz 
 	bam2fasta make_fastqs_percell --filename 10x-example/possorted_genome_bam.fastq.gz \
@@ -119,10 +129,11 @@ Bam2fasta make_fastqs_percell command, it takes BAM and/or barcode files as inpu
 
 
 ### `--filename`
-For bam/10x files, Use this to specify the location of the bam file or tenx.gz file to get per cell fastas/fastqs. For example:
+For bam/10x files, Use this to specify the location of the bam file or fastq.gz file to get per cell fastas. For example:
 
 ```bash
---filename /path/to/data/10x-example/possorted_genome_bam
+--filename /path/to/data/10x-example/possorted_genome_bam.bam
+--filename /path/to/data/10x-example/possorted_genome_bam.fastq.gz
 ```
 
 ## Bam optional parameters
@@ -235,7 +246,7 @@ The parameter `--channel-id` specifies the prefix for fastqs or fastq.gzs saved 
 
 
 ### `--output-format`
-The parameter `--output-format` specifies the format of output fastq per cell files. it can be either fastq or fastq.gz. This parameter is only valid for default method
+The parameter `--output-format` specifies the format of output fastq per cell files. it can be either fasta(when input format is bam), fastq or fastq.gz (when input format is fastq.gz). This parameter is only valid for default method
 **Example parameters**
 
 * Default: output-format is fastq
