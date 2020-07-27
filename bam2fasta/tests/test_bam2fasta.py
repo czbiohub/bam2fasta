@@ -12,8 +12,6 @@ from bam2fasta import VERSION
 def test_bam2fasta_info():
     status, out, err = utils.run_shell_cmd('bam2fasta info')
 
-    # no output to stderr
-    assert not err
     assert "bam2fasta version" in out
     assert "loaded from path" in out
     assert VERSION in out
@@ -22,8 +20,6 @@ def test_bam2fasta_info():
 def test_bam2fasta_info_verbose():
     status, out, err = utils.run_shell_cmd('bam2fasta info -v')
 
-    # no output to stderr
-    assert not err
     assert "pathos version" in out
     assert "screed version" in out
     assert "pysam version" in out

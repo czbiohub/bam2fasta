@@ -2,5 +2,6 @@
 include=
     bam2fasta/*.py
 omit =
+    __main__.py 
     setup.py
     bam2fasta/tests/*
