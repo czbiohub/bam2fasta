@@ -132,7 +132,6 @@ def read_barcodes_file(barcode_path):
     """
     with open(barcode_path) as f:
         barcodes = np.unique([line.strip() for line in f]).tolist()
-        print(barcodes)
     return barcodes
 
 
