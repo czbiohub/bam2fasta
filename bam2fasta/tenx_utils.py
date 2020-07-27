@@ -425,17 +425,22 @@ def write_to_barcode_meta_csv(
     """
     barcodes_meta_txts = glob.glob(
         os.path.join(barcode_meta_folder, "*_meta.txt"))
+    basenames = [
+        os.path.basename(i) for i in barcodes_meta_txts]
+    basenames = sorted(basenames)
     with open(write_barcode_meta_csv, "w") as fp:
         fp.write("{},{},{}".format(CELL_BARCODE, UMI_COUNT,
                                    READ_COUNT))
         fp.write('\n')
-        for barcode_meta_txt in barcodes_meta_txts:
+        for basename in basenames:
+            barcode_meta_txt = os.path.join(
+                barcode_meta_folder, basename)
             with open(barcode_meta_txt, 'r') as f:
                 umi_count, read_count = f.readline().split()
                 umi_count = int(umi_count)
                 read_count = int(read_count)
 
-                barcode_name = barcode_meta_txt.replace('_meta.txt', '')
+                barcode_name = basename.replace('_meta.txt', '')
                 fp.write("{},{},{}\n".format(barcode_name,
                                              umi_count,
                                              read_count))

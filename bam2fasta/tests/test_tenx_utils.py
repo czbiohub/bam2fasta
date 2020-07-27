@@ -284,8 +284,9 @@ def test_write_to_barcode_meta_csv():
             all_fastas_sorted)
         csv = os.path.join(location, "meta.csv")
         tenx.write_to_barcode_meta_csv(location, csv)
-        umi_counts = [6, 5, 15, 6, 2, 2, 2, 4]
-        read_counts = [312, 153, 594, 251, 68, 36, 2, 194]
+        umi_counts = [6, 2, 6, 4, 15, 5, 2, 2]
+        read_counts = [312, 36, 251, 194, 594, 153, 2, 68]
+        print(pd.read_csv(csv))
         for index, row in pd.read_csv(csv).iterrows():
             assert umi_counts[index] == row[tenx.UMI_COUNT]
             assert read_counts[index] == row[tenx.READ_COUNT]
@@ -302,10 +303,8 @@ def test_barcode_umi_seq_to_fasta():
             temp_folder=location)
         single_barcode_fastas = "," .join(
             itertools.chain(single_barcode_fastas))
-        print(single_barcode_fastas)
         all_fastas_sorted = tenx.get_fastas_per_unique_barcodes(
             single_barcode_fastas)
-        print(all_fastas_sorted)
         tenx.barcode_umi_seq_to_fasta(
             location,
             "X",
