@@ -10,12 +10,11 @@ dist: FORCE
 	$(PYTHON) setup.py sdist
 
 test:
-	$(PYTHON) setup.py install
+	pip install -e '.[test]'
 	$(PYTHON) -m pytest
 
 coverage:
 	$(PYTHON) setup.py clean --all
-	$(PYTHON) setup.py install
 	$(PYTHON) -m pytest --cov=. --cov-report term-missing
 
 FORCE:
