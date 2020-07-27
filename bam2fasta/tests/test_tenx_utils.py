@@ -285,6 +285,8 @@ def test_write_to_barcode_meta_csv():
         tenx.write_to_barcode_meta_csv(location, csv)
         umi_counts = [6, 5, 15, 6, 2, 2, 2, 4]
         read_counts = [312, 153, 594, 251, 68, 36, 2, 194]
+        print(pd.read_csv(csv))
+        assert 1 == 0
         for index, row in pd.read_csv(csv).iterrows():
             assert umi_counts[index] == row[tenx.UMI_COUNT]
             assert read_counts[index] == row[tenx.READ_COUNT]
@@ -376,9 +378,15 @@ def test_count_umis_per_cell(expected_good_barcodes):
             'AACCATGAGTTGTCGT-1', 'AAATGCCGTGAACCTT-1',
             'AAATGCCAGATAGTCA-1', 'AAACGGGAGGATATAC-1',
             'AAACGGGTCTCGTATT-1']
+        print(pd.read_csv(
+            meta).iloc[:, 0].values.tolist())
+        print(pd.read_csv(meta).iloc[:, 1].values.tolist())
+        print(pd.read_csv(
+            good_barcodes).iloc[:, 0].values.tolist())
         assert all_barcodes == pd.read_csv(
             meta).iloc[:, 0].values.tolist()
         assert expected_meta == pd.read_csv(meta).iloc[:, 1].values.tolist()
+        assert 1 == 0
         assert expected_good_barcodes == pd.read_csv(
             good_barcodes).iloc[:, 0].values.tolist()
 
