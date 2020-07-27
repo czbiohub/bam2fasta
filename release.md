@@ -15,7 +15,7 @@ cd bam2fasta
 ```
 2\. Set your new version number and release candidate (you might want to check https://github.com/czbiohub/bam2fasta/releases for next version number):
 ```
-new_version=1.0.5
+new_version=1.0.6
 rc=rc1
 ```
  and then tag the release candidate with the new version number prefixed by
@@ -86,7 +86,7 @@ deactivate
 source bin/activate
 pip install -U setuptools
 # install as much as possible from non-test server!
-pip install screed pytest pytest-cov pathos pandas>=0.24.1 tqdm>=4.36.1 pysam>=0.15.3 numpy cython>=0.29.12
+pip install screed pytest pytest-cov pathos pandas>=0.24.1 tqdm>=4.36.1 pysam==0.15.3 numpy cython>=0.29.12
 pip install -i https://test.pypi.org/simple --pre bam2fasta
 bam2fasta info  # should print "bam2fasta version ${new_version}${rc}"
 ```

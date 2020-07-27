@@ -98,7 +98,6 @@ def test_run_bam2fasta_supply_all_args():
 
         status, out, err = utils.run_shell_cmd(
             'bam2fasta percell --filename ' + testdata1 +
-            ' --method shard' +
             ' --min-umi-per-barcode 10' +
             ' --write-barcode-meta-csv ' + csv_path +
             ' --save-intermediate-files ' + temp_fastas_dir +
@@ -133,7 +132,7 @@ def test_run_bam2fasta_default_args():
         testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
 
         status, out, err = utils.run_shell_cmd(
-            'bam2fasta percell --method shard --filename ' + testdata1,
+            'bam2fasta percell --filename ' + testdata1,
             in_directory=location)
 
         assert status == 0
@@ -150,7 +149,19 @@ def test_run_bam2fasta_percell():
 
         fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location,
-             '--method', 'shard'])
+             ])
+
+        barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
+        assert len(barcodes) == 8
+
+
+def test_run_bam2fasta_convert():
+    with utils.TempDirectory() as location:
+        testdata1 = utils.get_test_data('10x-example/possorted_genome_bam.bam')
+
+        fasta_files = cli.convert(
+            ['--filename', testdata1, '--save-fastas', location,
+             ])
 
         barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
         assert len(barcodes) == 8
@@ -174,7 +185,7 @@ def test_run_bam2fasta_percell_nonzero_umi():
 
         fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location,
-             '--min-umi-per-barcode', '10', '--method', 'shard'])
+             '--min-umi-per-barcode', '10', ])
 
         barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
         assert len(barcodes) == 1

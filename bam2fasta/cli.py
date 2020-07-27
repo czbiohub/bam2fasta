@@ -160,7 +160,7 @@ def percell(args):
     logger.info('... reading bam file from %s', args.filename)
     n_jobs = args.processes
     input_format = os.path.basename(args.filename).split(".")[-1]
-    if args.method == "shard" and input_format == "bam":
+    if input_format == "bam":
         filenames = tenx_utils.shard_bam_file(
             args.filename,
             args.shard_size,
@@ -238,7 +238,7 @@ def percell(args):
     else:
         # if the fastq.gz file is already given
         assert input_format == "gz", \
-            ("for the default method please convert" +
+            ("please convert" +
              "bam files to fastq.gz using samtools")
         # Check if the good barcodes with significant umis is already given
         barcodes_significant_umis_file = args.barcodes_significant_umis_file
@@ -260,3 +260,9 @@ def percell(args):
         fastas = glob.glob(os.path.join(args.save_fastas, "*.{}".format(
             args.output_format)))
     return fastas
+
+
+def convert(args):
+    # keeping back compatibility
+    # bam2fasta 1.0.1 conversion of bam2fsta was called convert
+    return percell(args)

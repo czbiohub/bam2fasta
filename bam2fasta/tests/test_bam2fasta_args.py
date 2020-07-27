@@ -1,11 +1,11 @@
 import os
 
-from bam2fasta import bam2fasta_args
+from bam2fasta import b2fa_args
 from bam2fasta.tests import bam2fasta_tst_utils as utils
 
 
 def test_bam2fasta_parser():
-    parser = bam2fasta_args.create_parser()
+    parser = b2fa_args.create_parser()
     print(parser)
 
 
@@ -19,7 +19,7 @@ def test_bam2fasta_valid_args():
         save_intermediate_files_dir = os.path.join(location, "temp_fastas")
         if not os.path.exists(fastas_dir):
             os.makedirs(fastas_dir)
-        parser = bam2fasta_args.create_parser()
+        parser = b2fa_args.create_parser()
         args = [
             '--filename', testdata1,
             '--min-umi-per-barcode', '10',
@@ -39,12 +39,11 @@ def test_bam2fasta_valid_args():
             "barcodes_significant_umis_file": None,
             "channel_id": "",
             "output_format": "fastq",
-            "processes": bam2fasta_args.DEFAULT_PROCESSES,
-            "delimiter": bam2fasta_args.DEFAULT_DELIMITER,
-            "shard_size": bam2fasta_args.DEFAULT_LINE_COUNT,
-            "method": bam2fasta_args.DEFAULT_METHOD,
-            "cell_barcode_pattern": bam2fasta_args.CELL_BARCODE_PATTERN,
-            "molecular_barcode_pattern": bam2fasta_args.MOLECULAR_BARCODE_PATTERN,
+            "processes": b2fa_args.DEFAULT_PROCESSES,
+            "delimiter": b2fa_args.DEFAULT_DELIMITER,
+            "shard_size": b2fa_args.DEFAULT_LINE_COUNT,
+            "cell_barcode_pattern": b2fa_args.CELL_BARCODE_PATTERN,
+            "molecular_barcode_pattern": b2fa_args.MOLECULAR_BARCODE_PATTERN,
             "save_intermediate_files": save_intermediate_files_dir}
         args = parser.parse_args(args)
         args = vars(args)
