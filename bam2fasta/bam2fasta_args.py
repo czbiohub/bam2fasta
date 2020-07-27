@@ -6,7 +6,6 @@ DEFAULT_PROCESSES = 2
 DEFAULT_MIN_UMI_PER_BARCODE = 0
 CELL_BARCODE_PATTERN = r'(CB|XC):Z:(.*)[\t]'
 MOLECULAR_BARCODE_PATTERN = '(UB|XB):Z:([ACGT]+)'
-DEFAULT_METHOD = "default"
 
 
 class Bam2FastaArgumentParser(argparse.ArgumentParser):
@@ -88,11 +87,6 @@ def create_parser():
         '--barcodes-file', type=str,
         help="Barcodes file if the input is unfiltered 10x bam file",
         required=False)
-    parser.add_argument(
-        '--method', type=str,
-        help="To use shard & count method,specify 'shard',"
-        "by default it runs through the bam file line-by-line",
-        required=False, default=DEFAULT_METHOD)
     parser.add_argument(
         '--barcodes-significant-umis-file', type=str,
         help="Barcodes file with significant umi count",

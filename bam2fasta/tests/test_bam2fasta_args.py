@@ -42,7 +42,6 @@ def test_bam2fasta_valid_args():
             "processes": b2fa_args.DEFAULT_PROCESSES,
             "delimiter": b2fa_args.DEFAULT_DELIMITER,
             "shard_size": b2fa_args.DEFAULT_LINE_COUNT,
-            "method": b2fa_args.DEFAULT_METHOD,
             "cell_barcode_pattern": b2fa_args.CELL_BARCODE_PATTERN,
             "molecular_barcode_pattern": b2fa_args.MOLECULAR_BARCODE_PATTERN,
             "save_intermediate_files": save_intermediate_files_dir}

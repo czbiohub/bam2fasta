@@ -3,7 +3,35 @@ bam2fasta
 ![Tests](https://travis-ci.com/czbiohub/bam2fasta.svg)
 [![codecov](https://codecov.io/gh/czbiohub/bam2fasta/branch/master/graph/badge.svg)](https://codecov.io/gh/czbiohub/bam2fasta)
 
-Convert 10x bam file to individual FASTA files per cell barcode
+Convert 10x bam file or fastq.gz files to individual FASTA files per cell barcode
+convert large bam files to fastq.gz format before the individual fasta files per cell barcode conversion. 
+It speeds up this conversion
+For small bam files this package can be used directly to convert them to individual FASTA files per cell barcode
+
+
+To convert bam to fastq.gz format use samtools like below
+
+To get aligned reads from bam file into fastq.gz use 
+
+```
+samtools view -ub -F 4 ${bam} \\
+    | samtools fastq --threads ${cpus} -T "CB,XC,UB,XM,XB,RG" \\
+    | gzip -c - \\
+      > ${output_fastq_gz}
+```
+
+To get unaligned reads from bam file into fastq.gz use
+
+```
+    samtools view -f4 ${bam} \\
+      | grep -E '(CB|XC):Z:([ACGT]+)(\\-1)?' \\
+      | samtools fastq --threads ${cpus} -T "CB,XC,UB,XM,XB,RG" - \\
+      | gzip -c - \\
+        > ${output_fastq_gz} \\
+```
+
+Using samtools view through python is not recommended for large bam files, as samtools view is streaming the output
+
 
 Free software: MIT license
 
@@ -86,7 +114,6 @@ Bam2fasta make_fastqs_percell command, it takes BAM and/or barcode files as inpu
     * [`--delimiter`](#--delimiter)
     * [`--cell-barcode-patternt`](#--cell-barcode-pattern)
     * [`--molecular-barcode-pattern`](#--molecular-barcode-pattern)
-    * [`--method`](#--method)
     * [`--channel-id`](#--channel-id)
     * [`--output-format`](#--output-format)
 
@@ -197,14 +224,6 @@ The parameter `--molecular-barcode-pattern` specifies the regular expressions fo
 
 * Default: molecular-barcode-pattern is '(UB|XB):Z:([ACGT]+)'
 	* `--molecular-barcode-pattern 'UB:Z'`
-
-
-### `--method`
-The parameter `--method` specifies the method to convert bam to per cell fastas. options: shard bam file and count umis per cell barcode and make per cell fastqs after filtering or do not shard but convert bam to fastq.gz, count umis per cell barcode and filter barcodes and make per cell fastqs.
-**Example parameters**
-
-* Default: method is default
-	* `--method shard`
 
 
 ### `--channel-id`
