@@ -209,7 +209,6 @@ def test_run_bam2fasta_fq_percell_no_shard_nonzero_umi():
         fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location,
              '--min-umi-per-barcode', '10'])
-        print(fasta_files)
         barcodes = [
             filename.replace(".fastq", "") for filename in fasta_files]
         assert len(barcodes) == 1

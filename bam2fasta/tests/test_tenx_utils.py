@@ -286,7 +286,6 @@ def test_write_to_barcode_meta_csv():
         tenx.write_to_barcode_meta_csv(location, csv)
         umi_counts = [6, 2, 6, 4, 15, 5, 2, 2]
         read_counts = [312, 36, 251, 194, 594, 153, 2, 68]
-        print(pd.read_csv(csv))
         for index, row in pd.read_csv(csv).iterrows():
             assert umi_counts[index] == row[tenx.UMI_COUNT]
             assert read_counts[index] == row[tenx.READ_COUNT]
