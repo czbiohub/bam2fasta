@@ -35,6 +35,7 @@ def umis():
 @pytest.fixture()
 def expected_good_barcodes():
     return [
+        'AAAGATGCAGATCTGT-1',
         'AAATGCCCAAACTGCT-1',
         'AAATGCCGTGAACCTT-1',
         'AAATGCCAGATAGTCA-1',
@@ -285,8 +286,6 @@ def test_write_to_barcode_meta_csv():
         tenx.write_to_barcode_meta_csv(location, csv)
         umi_counts = [6, 5, 15, 6, 2, 2, 2, 4]
         read_counts = [312, 153, 594, 251, 68, 36, 2, 194]
-        print(pd.read_csv(csv))
-        assert 1 == 0
         for index, row in pd.read_csv(csv).iterrows():
             assert umi_counts[index] == row[tenx.UMI_COUNT]
             assert read_counts[index] == row[tenx.READ_COUNT]
@@ -372,23 +371,17 @@ def test_count_umis_per_cell(expected_good_barcodes):
             bam2fasta_args.MOLECULAR_BARCODE_PATTERN,
             3,
             good_barcodes)
-        expected_meta = [15, 2, 2, 5, 4, 6, 2]
+        expected_meta = [6, 15, 2, 2, 5, 4, 6, 2]
         all_barcodes = [
-            'AAATGCCCAAACTGCT-1', 'AACACGTAGTGTACCT-1',
-            'AACCATGAGTTGTCGT-1', 'AAATGCCGTGAACCTT-1',
-            'AAATGCCAGATAGTCA-1', 'AAACGGGAGGATATAC-1',
-            'AAACGGGTCTCGTATT-1']
-        print(pd.read_csv(
-            meta).iloc[:, 0].values.tolist())
-        print(pd.read_csv(meta).iloc[:, 1].values.tolist())
-        print(pd.read_csv(
-            good_barcodes).iloc[:, 0].values.tolist())
+            'AAAGATGCAGATCTGT-1', 'AAATGCCCAAACTGCT-1', 'AACACGTAGTGTACCT-1',
+            'AACCATGAGTTGTCGT-1', 'AAATGCCGTGAACCTT-1', 'AAATGCCAGATAGTCA-1',
+            'AAACGGGAGGATATAC-1', 'AAACGGGTCTCGTATT-1']
         assert all_barcodes == pd.read_csv(
-            meta).iloc[:, 0].values.tolist()
-        assert expected_meta == pd.read_csv(meta).iloc[:, 1].values.tolist()
-        assert 1 == 0
+            meta, header=None).iloc[:, 0].values.tolist()
+        assert expected_meta == pd.read_csv(
+            meta, header=None).iloc[:, 1].values.tolist()
         assert expected_good_barcodes == pd.read_csv(
-            good_barcodes).iloc[:, 0].values.tolist()
+            good_barcodes, header=None).iloc[:, 0].values.tolist()
 
 
 def test_record_to_fastq_string():

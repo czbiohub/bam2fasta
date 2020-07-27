@@ -30,7 +30,7 @@ matrix:
       before_install:
         - sudo apt-get update && sudo apt-get install -y autoconf automake make gcc perl zlib1g-dev libbz2-dev liblzma-dev libcurl4-gnutls-dev libssl-dev libncurses5-dev
       install: 
-        - pip install . -r requirements.txt
+        - pip3 install . -r requirements.txt
       script:
         - bam2fasta percell --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.fastq.gz --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4
         - bam2fasta percell --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --shard-size 1500
@@ -89,12 +89,12 @@ matrix:
       os: osx
       python: 3.5
       before_install:
-        - sudo pip install setuptools
+        - sudo pip3 install setuptools
         - brew update
         - brew install openssl
         - brew install zlib
       install: 
-        - sudo pip install . -r requirements.txt
+        - sudo pip3 install . -r requirements.txt
       script:
         - bam2fasta percell --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.fastq.gz --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4
         - bam2fasta percell --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --shard-size 1500
@@ -107,12 +107,12 @@ matrix:
       os: osx
       python: 3.6.5
       before_install:
-        - sudo pip install setuptools
+        - sudo pip3 install setuptools
         - brew update
         - brew install openssl
         - brew install zlib
       install: 
-        - sudo pip install . -r requirements.txt
+        - sudo pip3 install . -r requirements.txt
       script:
         - flake8 --config .flake8
         - python3 -m pytest
@@ -127,12 +127,12 @@ matrix:
       os: osx
       python: 3.7.3
       before_install:
-        - sudo pip install setuptools
+        - sudo pip3 install setuptools
         - brew update
         - brew install openssl
         - brew install zlib
       install: 
-        - sudo pip install . -r requirements.txt 
+        - sudo pip3 install . -r requirements.txt 
       script:
         - bam2fasta percell --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.fastq.gz --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4
         - bam2fasta percell --filename ./bam2fasta/tests/test-data/10x-example/possorted_genome_bam.bam --min-umi-per-barcode 10 --barcodes-file ./bam2fasta/tests/test-data/10x-example/barcodes.tsv --rename-10x-barcodes ./bam2fasta/tests/test-data/10x-example/barcodes_renamer.tsv --processes 4 --shard-size 1500

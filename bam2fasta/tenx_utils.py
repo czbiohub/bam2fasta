@@ -132,6 +132,7 @@ def read_barcodes_file(barcode_path):
     """
     with open(barcode_path) as f:
         barcodes = np.unique([line.strip() for line in f]).tolist()
+        print(barcodes)
     return barcodes
 
 
@@ -549,14 +550,20 @@ def count_umis_per_cell(
     list of the barcodes that have
     greater than or equal to min_umi_per_cell
     """
+
     barcode_counter = get_cell_barcode_umis(
         reads,
         cell_barcode_pattern,
         molecular_barcode_pattern)
     umi_per_barcode = {
         k: len(v) for k, v in barcode_counter.items()}
-    result_df = pd.DataFrame.from_dict(umi_per_barcode, orient='index')
-    result_df.to_csv(csv, header=False)
+    sorted(umi_per_barcode.items(), key=lambda x: x[0])
+    data = {
+        'barcode': list(umi_per_barcode.keys()),
+        'umi_count': list(umi_per_barcode.values())
+    }
+    result_df = pd.DataFrame(data)
+    result_df.to_csv(csv, header=False, index=False)
 
     series = pd.Series(umi_per_barcode)
 
