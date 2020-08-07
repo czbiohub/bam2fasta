@@ -48,7 +48,7 @@ SETUP_METADATA = \
             'bam2fasta = bam2fasta.__main__:main']},
         "install_requires": ["screed>=0.9",
                              "pathos>=0.2.5",
-                             "pysam==0.15.3",
+                             "pysam==0.16.0",
                              "tqdm>=4.36.1",
                              "numpy",
                              "pandas>=0.24.1"],

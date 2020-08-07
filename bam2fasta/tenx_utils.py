@@ -28,16 +28,21 @@ logger = logging.getLogger(__name__)
 
 def calculate_chunksize(total_jobs_todo, processes):
     """
-    Return a generator of strings after
-    splitting a string by the given separator
+    Return integer - chunksize representing the number of jobs
+    per process that needs to be run
 
-    sep : str
-        Separator between strings, default one space
+    total_jobs_todo : int
+        total number of jobs
+    processes; int
+        number of processes to be used for multiprocessing
     Returns
     -------
-    Yields generator of strings after
-    splitting a string by the given separator
+    Integer reprsenting number of jobs to be run on each process
     """
+    chunksize, extra = divmod(total_jobs_todo, processes)
+    if extra:
+        chunksize += 1
+    return chunksize
     chunksize, extra = divmod(total_jobs_todo, processes)
     if extra:
         chunksize += 1
