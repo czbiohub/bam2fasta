@@ -47,6 +47,7 @@ SETUP_METADATA = \
         "entry_points": {'console_scripts': [
             'bam2fasta = bam2fasta.__main__:main']},
         "install_requires": ["screed>=0.9",
+                             "htslib=1.3.1",
                              "pathos>=0.2.5",
                              "pysam==0.16.0",
                              "tqdm>=4.36.1",
