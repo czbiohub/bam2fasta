@@ -86,7 +86,7 @@ deactivate
 source bin/activate
 pip install -U setuptools
 # install as much as possible from non-test server!
-pip install screed pytest pytest-cov pathos pandas>=0.24.1 tqdm>=4.36.1 pysam==0.16.0 numpy cython>=0.29.12
+pip install screed pytest pytest-cov pathos pandas>=0.24.1 tqdm>=4.36.1 pysam==0.15.3 numpy cython>=0.29.12
 pip install -i https://test.pypi.org/simple --pre bam2fasta
 bam2fasta info  # should print "bam2fasta version ${new_version}${rc}"
 ```

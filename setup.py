@@ -49,7 +49,7 @@ SETUP_METADATA = \
         "install_requires": ["screed>=0.9",
                              "htslib=1.3.1",
                              "pathos>=0.2.5",
-                             "pysam==0.16.0",
+                             "pysam==0.15.3",
                              "tqdm>=4.36.1",
                              "numpy",
                              "pandas>=0.24.1"],
