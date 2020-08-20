@@ -43,10 +43,6 @@ def calculate_chunksize(total_jobs_todo, processes):
     if extra:
         chunksize += 1
     return chunksize
-    chunksize, extra = divmod(total_jobs_todo, processes)
-    if extra:
-        chunksize += 1
-    return chunksize
 
 
 def iter_split(string, sep=None):
