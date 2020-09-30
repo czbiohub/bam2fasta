@@ -83,10 +83,7 @@ Bam2fasta percell command, it takes fastq.gz and/or barcode files as input. Exam
 	bam2fasta percell --filename 10x-example/possorted_genome_bam.fastq.gz \
 		--save-fastas fastas --min-umi-per-barcode 10 \
 		--write-barcode-meta-csv all_barcodes_meta.csv \
-		--barcodes 10x-example/barcodes.tsv \
-		--rename-10x-barcodes 10x-example/barcodes_renamer.tsv \
-		--shard-size 150 \
-		--save-intermediate-files intermediate_files
+		--barcodes 10x-example/barcodes.tsv
 
 Bam2fasta count_umis_percell command, it takes fastq.gz file with sequences and barcodes, umis in their read id and counts the umis per cell. Examples:
 	
@@ -106,8 +103,7 @@ Bam2fasta make_fastqs_percell command, it takes it takes fastq.gz file with sequ
 		--min-umi-per-barcode 10 \
 		--barcodes-significant-umis-file good_barcodes.csv \
 		--barcodes 10x-example/barcodes.tsv \
-		--cell-barcode-pattern 'CB:Z' \
-		--rename-10x-barcodes 10x-example/barcodes_renamer.tsv
+		--cell-barcode-pattern 'CB:Z'
 
 ## Table of Contents
 * [Main arguments](#main-arguments)
