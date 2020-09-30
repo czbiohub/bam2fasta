@@ -170,6 +170,7 @@ def test_run_bam2fasta_percell_no_shard():
 
         fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location])
+        print(fasta_files)
 
         barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
         assert len(barcodes) == 8
@@ -182,7 +183,6 @@ def test_run_bam2fasta_percell_nonzero_umi():
         fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location,
              '--min-umi-per-barcode', '10', ])
-
         barcodes = [filename.replace(".fasta", "") for filename in fasta_files]
         assert len(barcodes) == 1
         sequences_fasta = []
@@ -205,6 +205,7 @@ def test_run_bam2fasta_fq_percell_no_shard_nonzero_umi():
         fasta_files = cli.percell(
             ['--filename', testdata1, '--save-fastas', location,
              '--min-umi-per-barcode', '10'])
+        print(fasta_files)
         barcodes = [
             filename.replace(".fastq", "") for filename in fasta_files]
         assert len(barcodes) == 1
