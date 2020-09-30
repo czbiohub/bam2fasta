@@ -421,12 +421,11 @@ def test_make_per_cell_fastqs():
         os.makedirs(outdir)
         tenx.make_per_cell_fastqs(
             path,
-            None,
             outdir,
             "",
             "fastq",
             bam2fasta_args.CELL_BARCODE_PATTERN,
-            tenx.read_barcodes_file(barcodes_file))
+            barcodes_file)
         fastas = glob.glob(os.path.join(outdir, "*.fastq"))
 
         for fasta in fastas:
@@ -444,15 +443,13 @@ def test_make_per_cell_fastq_gzs():
         os.makedirs(outdir)
         tenx.make_per_cell_fastqs(
             path,
-            None,
             outdir,
             "possorted_aligned_",
             "fastq.gz",
             bam2fasta_args.CELL_BARCODE_PATTERN,
-            tenx.read_barcodes_file(barcodes_file))
+            barcodes_file)
         fastas = glob.glob(os.path.join(outdir, "*.fastq.gz"))
-
         for fasta in fastas:
             fasta_name = os.path.basename(fasta).replace(
-                ".fastq.gz", "").replace("possorted_aligned_", "")
+                ".fastq.gz", "").replace("possorted_aligned__", "")
             assert fasta_name in barcodes

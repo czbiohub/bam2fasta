@@ -64,12 +64,7 @@ def make_fastqs_percell(args):
         parser = create_parser()
         args = parser.parse_args(args)
         logger.info(args)
-    with screed.open(args.filename) as f:
-        record_count = 0
-        for record in f:
-            record_count += 1
-    if record_count == 0:
-        return []
+
     save_path = os.path.abspath(args.save_fastas)
     # Save fasta sequences for aligned and unaligned sequences in
     # separate folders with the following name in save_fastas
@@ -80,46 +75,15 @@ def make_fastqs_percell(args):
             "Path {} already exists, might be overwriting data".format(
                 save_path))
     logger.info("Saving fastas at path {}".format(save_path))
-    # Get the good barcodes, chunk them to lists
-    good_barcodes = tenx_utils.read_barcodes_file(
-        args.barcodes_significant_umis_file)
 
-    # Chunk the good barcodes file beforehand to parallely process
-    # and write the fata files per barcode
-    n_jobs = args.processes
-    num_good_barcodes = len(good_barcodes)
-    if num_good_barcodes == 1:
-        chunksize = 1
-    elif num_good_barcodes == 0:
-        logger.info("No good barcodes to read from")
-        raise AssertionError(
-            "barcodes_significant_umis_file is empty {}".format(
-                args.barcodes_significant_umis_file))
-    else:
-        chunksize = tenx_utils.calculate_chunksize(
-            num_good_barcodes, n_jobs)
-    pool_lists = []
-    for i in range(0, num_good_barcodes, chunksize):
-        pool_lists.append(good_barcodes[i: i + chunksize])
-
-    pool = multiprocessing.Pool(processes=n_jobs)
-    logger.info(
-        "Pooled %d and chunksize %d mapped for %d lists",
-        n_jobs, chunksize, len(pool_lists))
-    func = partial(
-        tenx_utils.make_per_cell_fastqs,
+    fastqs = tenx_utils.make_per_cell_fastqs(
         args.filename,
-        args.rename_10x_barcodes,
         save_path,
         args.channel_id,
         args.output_format,
-        args.cell_barcode_pattern)
+        args.cell_barcode_pattern,
+        args.barcodes_significant_umis_file)
 
-    pool.map(func, pool_lists)
-    pool.close()
-    pool.join()
-    fastqs = glob.glob(os.path.join(save_path, "*.{}".format(
-        args.output_format)))
     return fastqs
 
 
@@ -207,7 +171,7 @@ def percell(args):
         # Cleaning up to retrieve memory from unused large variables
         del all_fastas
 
-        # Gather all barcodes oer umis to one fasta
+        # Gather all barcodes per umis to one fasta
         func = partial(
             tenx_utils.barcode_umi_seq_to_fasta,
             save_fastas,
@@ -253,12 +217,10 @@ def percell(args):
             "barcodes_with_significant_umis.tsv")
         count_umis_percell(args)
         args.channel_id = basename_wo_format
-        make_fastqs_percell(args)
+        fastas = make_fastqs_percell(args)
         logger.info(
             "time taken to write fastas is %.5f seconds",
             time.time() - startt)
-        fastas = glob.glob(os.path.join(args.save_fastas, "*.{}".format(
-            args.output_format)))
     return fastas
 
 

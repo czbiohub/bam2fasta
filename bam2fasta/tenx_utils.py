@@ -14,7 +14,6 @@ import re
 import screed
 from tqdm import tqdm
 import pandas as pd
-import numpy as np
 
 CELL_BARCODES = ['CB', 'XC']
 UMIS = ['UB', 'XM']
@@ -119,20 +118,13 @@ def parse_barcode_renamer(barcodes, barcode_renamer):
     return renamer
 
 
-def read_barcodes_file(barcode_path):
-    """Read single-column barcodes.tsv and genes.tsv files from 10x.
-
-    Parameters
-    ----------
-    barcode_path : str
-        Name of a 10x 'barcodes.tsv' files
-    Returns
-    -------
-    barcodes : list
-        List of QC-passing barcodes from 'barcodes.tsv'
+def read_barcodes_file(filename):
+    """Read a barcodes.tsv filename, output set of unique barcodes
+    They should already be unique.. the "frozenset" datastructure is just for
+    quick checking of set membership
     """
-    with open(barcode_path) as f:
-        barcodes = np.unique([line.strip() for line in f]).tolist()
+    with open(filename) as f:
+        barcodes = frozenset(x.strip().replace("_", "") for x in f.readlines())
     return barcodes
 
 
@@ -620,23 +612,33 @@ def write_fastq(records, filename, record_name=None):
     if filename.endswith('gz'):
         import gzip
         opener = gzip.open
-        mode = 'at'
+        mode = 'wt'
     else:
         opener = open
-        mode = 'a'
+        mode = 'w'
 
     with opener(filename, mode) as f:
         f.writelines([record_to_fastq_string(r) for r in records])
 
 
+def get_good_cell_barcode_records(reads, good_barcodes, cell_barcode_pattern):
+    good_cell_barcode_records = defaultdict(list)
+
+    with screed.open(reads) as f:
+        for record in tqdm(f):
+            cell_barcode = get_cell_barcode(record, cell_barcode_pattern)
+            if cell_barcode in good_barcodes:
+                good_cell_barcode_records[cell_barcode].append(record)
+    return good_cell_barcode_records
+
+
 def make_per_cell_fastqs(
         reads,
-        rename_10x_barcodes_file,
         outdir,
         channel_id,
         output_format,
         cell_barcode_pattern,
-        barcodes_with_significant_umi):
+        good_barcodes_filename):
     """Write the filtered cell barcodes in reads
     from barcodes_with_significant_umi_file
     fastq.gzs to outdir
@@ -646,10 +648,6 @@ def make_per_cell_fastqs(
     reads : str
         read records from fasta path
         greater than or equal to min_umi_per_cell
-    rename_10x_barcodes_file: str
-        Path to tab-separated file mapping barcodes to their new name
-        e.g. with channel or cell annotation label,
-        e.g. AAATGCCCAAACTGCT-1    lung_epithelial_cell|AAATGCCCAAACTGCT-1
     outdir: str
         write the per cell barcode fastq.gzs to outdir
     channel_id: str
@@ -666,20 +664,23 @@ def make_per_cell_fastqs(
     from barcodes_with_significant_umi_file
     fastq.gzs to outdir
     """
-    renamer = parse_barcode_renamer(
-        barcodes_with_significant_umi, rename_10x_barcodes_file)
     if channel_id is None:
         channel_id = ""
 
-    with screed.open(reads) as f:
-        for record in tqdm(f):
-            cell_barcode = get_cell_barcode(record, cell_barcode_pattern)
-            if cell_barcode in barcodes_with_significant_umi:
-                renamed = renamer[cell_barcode]
-                write_fastq(
-                    [record],
-                    os.path.join(
-                        outdir,
-                        "{}".format(channel_id) + renamed + ".{}".format(
-                            output_format)),
-                    renamed)
+    good_barcodes = read_barcodes_file(good_barcodes_filename)
+    fastqs = []
+    record_count = 0
+
+    for record in screed.open(reads):
+        record_count += 1
+        if record_count == 0:
+            return fastqs
+
+    good_cell_barcode_records = get_good_cell_barcode_records(
+        reads, good_barcodes, cell_barcode_pattern)
+    for cell_barcode, records in good_cell_barcode_records.items():
+        filename = "{}/{}_{}.fastq.gz".format(outdir, channel_id, cell_barcode)
+        write_fastq(records, filename)
+        fastqs.append(filename)
+    del good_cell_barcode_records
+    return fastqs
