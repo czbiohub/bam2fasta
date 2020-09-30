@@ -61,15 +61,13 @@ def test_run_make_fastqs_percell():
             '10x-example/good_barcodes.csv')
 
         barcodes_path = utils.get_test_data('10x-example/barcodes.tsv')
-        renamer_path = utils.get_test_data('10x-example/barcodes_renamer.tsv')
         fastas_dir = os.path.join(location, "fastas")
         if not os.path.exists(fastas_dir):
             os.makedirs(fastas_dir)
 
         status, out, err = utils.run_shell_cmd(
             'bam2fasta make_fastqs_percell --filename ' + testdata1 +
-            ' --barcodes-file ' + barcodes_path + ' --rename-10x-barcodes ' +
-            renamer_path + " --processes 1" +
+            ' --barcodes-file ' + barcodes_path +
             " --barcodes-significant-umis-file " + good_barcodes_path +
             ' --save-fastas ' + fastas_dir,
             in_directory=location)

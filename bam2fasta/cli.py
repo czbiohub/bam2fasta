@@ -221,6 +221,7 @@ def percell(args):
         logger.info(
             "time taken to write fastas is %.5f seconds",
             time.time() - startt)
+
     return fastas
 
 
