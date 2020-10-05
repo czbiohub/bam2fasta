@@ -67,6 +67,7 @@ Bam2fasta info command:
 		bam2fasta info
 		bam2fasta info -v
 
+Note: If channel-id argument is empty the fastqs files begin with _
 Bam2fasta percell command, it takes BAM and/or barcode files as input. Examples:
 	
 	bam2fasta percell --filename filename.bam 
