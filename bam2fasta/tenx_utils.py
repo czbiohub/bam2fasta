@@ -679,9 +679,12 @@ def make_per_cell_fastqs(
     good_cell_barcode_records = get_good_cell_barcode_records(
         reads, good_barcodes, cell_barcode_pattern)
     for cell_barcode, records in good_cell_barcode_records.items():
-        filename = "{}/{}_{}.{}".format(
-            outdir, channel_id, cell_barcode, output_format)
+        if channel_id == "":
+            filename = "{}/{}.{}".format(
+                outdir, cell_barcode, output_format)
+        else:
+            filename = "{}/{}_{}.{}".format(
+               outdir, channel_id, cell_barcode, output_format)
         write_fastq(records, filename)
         fastqs.append(filename)
-    del good_cell_barcode_records
     return fastqs
