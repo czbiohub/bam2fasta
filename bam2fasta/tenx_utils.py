@@ -684,7 +684,7 @@ def make_per_cell_fastqs(
                 outdir, cell_barcode, output_format)
         else:
             filename = "{}/{}_{}.{}".format(
-               outdir, channel_id, cell_barcode, output_format)
+                outdir, channel_id, cell_barcode, output_format)
         write_fastq(records, filename)
         fastqs.append(filename)
     return fastqs
